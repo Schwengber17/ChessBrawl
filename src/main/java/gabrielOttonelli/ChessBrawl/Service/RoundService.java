@@ -27,6 +27,20 @@ public class RoundService {
     private final RoundRepository roundRepository;
 
 
+    public RoundDTO findRoundById(Long id) {
+        Round round = roundRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Rodada não encontrada"));
+        return convertToDTO(round);
+    }
+
+    public List<RoundDTO> findRoundsByTournament(Long tournamentId) {
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                .orElseThrow(() -> new RuntimeException("Torneio não encontrado"));
+        
+        return roundRepository.findByTournamentOrderByRoundNumber(tournament).stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+    }
     @Transactional
     public RoundDTO createNextRound(Long tournamentId){
         Tournament tournament = tournamentRepository.findById(tournamentId)
@@ -155,13 +169,6 @@ public class RoundService {
             }   
         }
     }
-
-    public RoundDTO getRoundById(Long id) {
-        Round round = roundRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Rodada não encontrada"));
-        return convertToDTO(round);
-    }
-
 
 
 }

@@ -2,6 +2,7 @@ package gabrielOttonelli.ChessBrawl.Service;
 
 import lombok.RequiredArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.Random;
 
 import org.springframework.stereotype.Service;
@@ -54,13 +55,14 @@ public class MatchService {
     }
 
     @Transactional
-    public MatchDTO startMatch(MatchDTO matchDTO) {
-        Match match = matchRepository.findById(matchDTO.getId())
+    public MatchDTO startMatch(Long id) {
+        Match match = matchRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Partida não encontrada"));
+        
         if (match.getStatus() != Match.MatchStatus.PENDING) {
-            throw new RuntimeException("Partida já finalizada ou em andamento");
+            throw new RuntimeException("Partida já iniciada ou finalizada");
         }
-        match.setStatus(Match.MatchStatus.IN_PROGRESS);
+        
         match = matchRepository.save(match);
         return convertToDTO(match);
     }
