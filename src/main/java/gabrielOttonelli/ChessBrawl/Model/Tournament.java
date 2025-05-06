@@ -9,6 +9,8 @@ import lombok.NoArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Data
 @NoArgsConstructor
@@ -16,7 +18,7 @@ import java.util.List;
 public class Tournament {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long id;    
 
     @NotBlank(message = "Nome do torneio é obrigatório")
     private String name;
@@ -32,6 +34,10 @@ public class Tournament {
         inverseJoinColumns = @JoinColumn(name = "player_id")
     )
     private List<Player> players = new ArrayList<>();
+
+    @OneToMany(mappedBy = "tournament", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    private List<Round> rounds = new ArrayList<>();
 
     public enum TournamentStatus {
         CREATED, IN_PROGRESS, FINISHED

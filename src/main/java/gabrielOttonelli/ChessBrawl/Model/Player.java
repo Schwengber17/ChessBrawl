@@ -8,6 +8,8 @@ import lombok.AllArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 
@@ -42,16 +44,11 @@ public class Player {
     private int rage=0;
     
     @ManyToMany(mappedBy = "players")
-    private List<Tournament> tournmentsPlayed = new ArrayList<>();
+    @JsonIgnore
+    private List<Tournament> tournamentsPlayed = new ArrayList<>();
 
     @ManyToOne
     @JoinColumn(name = "current_tournament_id")
-    private Tournament tournament;
-
-    private int wins;
-    private int losses;
-    private int draws;
-    private int gamesPlayed;
-    private int movesMade;
+    private Tournament currentTournament;
 
 }

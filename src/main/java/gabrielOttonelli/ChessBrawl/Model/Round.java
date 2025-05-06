@@ -15,6 +15,7 @@ public class Round {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+     
     private int roundNumber;
 
     @Enumerated(EnumType.STRING)
@@ -24,7 +25,7 @@ public class Round {
     @JoinColumn(name = "tournament_id")
     private Tournament tournament;
 
-    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "round", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Match> matches = new ArrayList<>();
     
     public enum RoundStatus {

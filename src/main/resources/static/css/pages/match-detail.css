@@ -1,0 +1,226 @@
+/* Estilos para a página de detalhes da partida */
+
+.match-header {
+    margin-bottom: 2rem;
+}
+
+.match-players {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eee;
+}
+
+.player {
+    flex: 1;
+    text-align: center;
+}
+
+.player h3 {
+    margin: 0 0 5px 0;
+    font-size: 1.5rem;
+}
+
+.player p {
+    margin: 0;
+    color: #666;
+}
+
+.match-vs {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 20px;
+}
+
+.match-vs span {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.status-badge {
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.status-scheduled {
+    background-color: #e9ecef;
+    color: #495057;
+}
+
+.status-in_progress {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.status-finished {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.match-info {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    color: #666;
+}
+
+.info-item i {
+    margin-right: 8px;
+    color: #3498db;
+}
+
+.match-actions {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 2rem;
+}
+
+.match-sections {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.match-section {
+    margin-bottom: 2rem;
+}
+
+.match-section h3 {
+    margin-bottom: 1rem;
+}
+
+/* Eventos */
+.event-item {
+    display: flex;
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.event-item:last-child {
+    border-bottom: none;
+}
+
+.event-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    flex-shrink: 0;
+}
+
+.event-icon i {
+    font-size: 1.2rem;
+}
+
+.event-content {
+    flex: 1;
+}
+
+.event-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.event-type {
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.event-points {
+    font-weight: 600;
+}
+
+.event-points.positive {
+    color: #2ecc71;
+}
+
+.event-points.negative {
+    color: #e74c3c;
+}
+
+.event-description {
+    margin: 0 0 10px 0;
+}
+
+.event-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* Ícones de eventos */
+.event-icon.original-move {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #2ecc71;
+}
+
+.event-icon.advantagous-position {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+}
+
+.event-icon.blunder {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+}
+
+.event-icon.disrespectful-behavior {
+    background-color: rgba(243, 156, 18, 0.1);
+    color: #f39c12;
+}
+
+.event-icon.rage-attack {
+    background-color: rgba(231, 76, 60, 0.1);
+    color: #e74c3c;
+}
+
+/* Loading */
+.loading-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 300px;
+}
+
+/* Responsividade */
+@media (max-width: 992px) {
+    .match-sections {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .match-players {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .match-vs {
+        margin: 15px 0;
+    }
+    
+    .match-info {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
+}

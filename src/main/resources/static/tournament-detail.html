@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhes do Torneio - Chess Brawl</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages/tournament-detail.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-chess-knight"></i>
+                <h1>Chess Brawl</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">Início</a></li>
+                    <li><a href="tournaments.html" class="active">Torneios</a></li>
+                    <li><a href="players.html">Jogadores</a></li>
+                    <li><a href="history.html">Histórico</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="page-header">
+            <div class="tournament-title">
+                <h2 id="tournament-name">Carregando torneio...</h2>
+                <span id="tournament-status" class="status-badge">...</span>
+            </div>
+            <a href="tournaments.html" class="btn btn-outline">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </a>
+        </div>
+
+        <div id="tournament-loading" class="loading-container">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Carregando dados do torneio...
+            </div>
+        </div>
+
+        <div id="tournament-content" style="display: none;">
+            <div class="tournament-actions">
+                <button id="start-tournament-btn" class="btn btn-primary" style="display: none;">
+                    <i class="fas fa-play"></i> Iniciar Torneio
+                </button>
+            </div>
+
+            <div class="tournament-sections">
+                <section class="tournament-section">
+                    <h3>Classificação</h3>
+                    <div class="card">
+                        <table class="table ranking-table">
+                            <thead>
+                                <tr>
+                                    <th>Pos.</th>
+                                    <th>Jogador</th>
+                                    <th>Nome</th>
+                                    <th class="text-center">Pontos</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ranking-table-body">
+                                <!-- Dados da classificação serão inseridos aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="tournament-section">
+                    <h3>Rodadas</h3>
+                    <div id="rounds-container">
+                        <!-- Rodadas serão inseridas aqui -->
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <!-- Template para rodada -->
+    <template id="round-template">
+        <div class="round-card card">
+            <div class="round-header">
+                <h4 class="round-title">Rodada <span class="round-number"></span></h4>
+                <span class="round-status"></span>
+            </div>
+            <div class="matches-container">
+                <!-- Partidas serão inseridas aqui -->
+            </div>
+        </div>
+    </template>
+
+    <!-- Template para partida -->
+    <template id="match-template">
+        <div class="match-card">
+            <div class="match-players">
+                <div class="player player1">
+                    <span class="player-nickname"></span>
+                </div>
+                <div class="match-vs">VS</div>
+                <div class="player player2">
+                    <span class="player-nickname"></span>
+                </div>
+            </div>
+            <div class="match-status"></div>
+            <div class="match-actions">
+                <a href="#" class="btn btn-sm btn-outline view-match">
+                    <i class="fas fa-eye"></i> Ver Partida
+                </a>
+            </div>
+        </div>
+    </template>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p>&copy; 2025 Chess Brawl. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/pages/tournament-detail.js"></script>
+</body>
+</html>

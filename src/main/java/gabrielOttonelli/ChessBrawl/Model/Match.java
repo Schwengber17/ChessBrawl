@@ -1,11 +1,15 @@
 package gabrielOttonelli.ChessBrawl.Model;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
+@Table(name = "matches")
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -27,27 +31,20 @@ public class Match {
     private Player winner;
     
     @ManyToOne
+    @JoinColumn(name = "tournament_id")
+    private Tournament tournament;
+    
+    @ManyToOne
     @JoinColumn(name ="round_id")
     private Round round;
 
     @Enumerated(EnumType.STRING)
     private MatchStatus status = MatchStatus.PENDING;
 
+    @OneToMany(mappedBy = "match", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Event> events = new ArrayList<>();
+    
     private boolean blitzMatch = false;
-
-    // Eventos para player1
-    private boolean player1OriginalMove = false;
-    private boolean player1Blunder = false;
-    private boolean player1AdvantagousPosition = false;
-    private boolean player1Disrespect = false;
-    private boolean player1RageAttack = false;
-
-    // Eventos para player2
-    private boolean player2OriginalMove = false;
-    private boolean player2Blunder = false;
-    private boolean player2AdvantagousPosition = false;
-    private boolean player2Disrespect = false;
-    private boolean player2RageAttack = false;
 
     public enum MatchStatus {
         PENDING, IN_PROGRESS, FINISHED

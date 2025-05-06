@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Histórico de Torneios - Chess Brawl</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages/history.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-chess-knight"></i>
+                <h1>Chess Brawl</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">Início</a></li>
+                    <li><a href="tournaments.html">Torneios</a></li>
+                    <li><a href="players.html">Jogadores</a></li>
+                    <li><a href="history.html" class="active">Histórico</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="page-header">
+            <h2>Histórico de Torneios</h2>
+        </div>
+
+        <div class="filters-bar">
+            <div class="search-input">
+                <i class="fas fa-search"></i>
+                <input type="text" id="tournament-search" placeholder="Buscar torneio por nome...">
+            </div>
+            <div class="sort-options">
+                <label for="sort-by">Ordenar por:</label>
+                <select id="sort-by">
+                    <option value="date">Data (mais recente)</option>
+                    <option value="name">Nome</option>
+                    <option value="players">Número de jogadores</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="tournaments-container" class="tournaments-grid">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Carregando histórico de torneios...
+            </div>
+        </div>
+    </main>
+
+    <!-- Template para card de torneio -->
+    <template id="tournament-card-template">
+        <div class="tournament-card">
+            <div class="tournament-header">
+                <h3 class="tournament-name"></h3>
+                <div class="tournament-date"></div>
+            </div>
+            <div class="tournament-champion">
+                <div class="champion-label">
+                    <i class="fas fa-trophy"></i> Campeão
+                </div>
+                <div class="champion-name"></div>
+            </div>
+            <div class="tournament-stats">
+                <div class="stat-item">
+                    <i class="fas fa-users"></i>
+                    <span class="player-count"></span> jogadores
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-chess-board"></i>
+                    <span class="match-count"></span> partidas
+                </div>
+                <div class="stat-item">
+                    <i class="fas fa-layer-group"></i>
+                    <span class="round-count"></span> rodadas
+                </div>
+            </div>
+            <div class="tournament-actions">
+                <button class="btn btn-outline view-details">Ver Detalhes</button>
+            </div>
+        </div>
+    </template>
+
+    <!-- Modal de detalhes do torneio -->
+    <div id="tournament-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-tournament-name"></h3>
+                <button class="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tournament-info">
+                    <div class="info-item">
+                        <span class="info-label">Data de Início:</span>
+                        <span id="modal-start-date"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Data de Término:</span>
+                        <span id="modal-end-date"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Campeão:</span>
+                        <span id="modal-champion"></span>
+                    </div>
+                </div>
+
+                <h4>Classificação Final</h4>
+                <table class="table ranking-table">
+                    <thead>
+                        <tr>
+                            <th>Pos.</th>
+                            <th>Jogador</th>
+                            <th>Nome</th>
+                            <th class="text-center">Pontos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-ranking">
+                        <!-- Dados da classificação serão inseridos aqui -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p>&copy; 2025 Chess Brawl. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/pages/history.js"></script>
+</body>
+</html>

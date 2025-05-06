@@ -21,12 +21,14 @@ public class PlayerDTO {
     @Min(value = 1, message = "Pontuação mínima no ranking é 1")
     @Max(value = 15000, message = "Pontuação máxima no ranking é 15000")
     private int rating;
-    
+    private Long currentTournamentId;
+    private String currentTournamentName;
     private int tournamentPoints = 70;
     private int originalMoves = 0;
-    private int blunders = 0;
+    private int blundersMade = 0;
     private int advantageousPositions = 0;
     private int disrespectfulBehavior = 0;
     private int rage = 0;
 
+    
 }

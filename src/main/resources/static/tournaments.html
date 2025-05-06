@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Torneios - Chess Brawl</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/pages/tournaments.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-chess-knight"></i>
+                <h1>Chess Brawl</h1>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="index.html">Início</a></li>
+                    <li><a href="tournaments.html" class="active">Torneios</a></li>
+                    <li><a href="players.html">Jogadores</a></li>
+                    <li><a href="history.html">Histórico</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <div class="page-header">
+            <h2>Torneios</h2>
+            <a href="new-tournament.html" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Novo Torneio
+            </a>
+        </div>
+
+        <div class="tournament-status-tabs">
+            <button class="tab-btn active" data-status="active">Ativos</button>
+            <button class="tab-btn" data-status="finished">Finalizados</button>
+            <button class="tab-btn" data-status="all">Todos</button>
+        </div>
+
+        <div id="tournaments-container">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin"></i> Carregando torneios...
+            </div>
+        </div>
+    </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <p>&copy; 2025 Chess Brawl. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <template id="tournament-card-template">
+        <div class="card tournament-card">
+            <div class="card-header">
+                <h3 class="card-title tournament-name"></h3>
+                <span class="tournament-status"></span>
+            </div>
+            <div class="tournament-details">
+                <div class="detail-item">
+                    <i class="fas fa-users"></i>
+                    <span class="player-count"></span> jogadores
+                </div>
+                <div class="detail-item">
+                    <i class="fas fa-chess-board"></i>
+                    <span class="round-count"></span> rodadas
+                </div>
+            </div>
+            <div class="card-actions">
+                <a href="#" class="btn btn-primary view-tournament">Ver Detalhes</a>
+                <button onclick="deleteTournament(1)">Excluir</button>
+            </div>
+        </div>
+    </template>
+
+    <script src="js/utils.js"></script>
+    <script src="js/api.js"></script>
+    <script type="module" src="js/pages/tournaments.js"></script>
+</body>
+</html>
