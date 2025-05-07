@@ -16,11 +16,22 @@
 - **Font Awesome**
 
 ### Configurar o application properties
-spring.datasource.url=jdbc:h2:mem:chessbrawl
-spring.datasource.driverClassName=org.h2.Driver
-spring.datasource.username=sa
+spring.datasource.url=jdbc:mysql://127.0.0.1:3306/chessbrawl?useSSL=false&serverTimezone=UTC
+spring.datasource.username=
 spring.datasource.password=
+
 spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+spring.jpa.properties.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
+server.port=8080
+server.servlet.context-path=/
+spring.devtools.restart.enabled=true
+spring.devtools.livereload.enabled=true
+spring.web.resources.static-locations=classpath:/static/
+spring.web.resources.cache.period=0
+spring.web.resources.chain.cache=false
+
+
 
 
 ### Rode o projeto 
