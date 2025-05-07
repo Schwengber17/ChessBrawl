@@ -211,82 +211,65 @@ document.addEventListener('DOMContentLoaded', function() {
         if (ratingInput) ratingInput.value = player.rating || 1000; // Usando player.rating, valor padrão 1000
         if (playerIdInput) playerIdInput.value = player.id || ''; // Define o ID no campo oculto
 
-        // Limpar mensagens de erro anteriores do formulário
         clearFormErrors();
 
-        // Exibe o modal
         if (playerModal) {
             playerModal.classList.add('show');
             playerModal.style.display = 'block';
-             // O listener windowClickHandler já está adicionado ao carregar a página
         }
     }
 
-    // Abre o modal para criação de novo jogador
     function openCreateModal() {
-        currentPlayerId = null; // Reseta o ID do jogador atual (indicando criação)
+        currentPlayerId = null; 
 
-        // Atualiza o título do modal
         if (playerFormTitle) {
             playerFormTitle.textContent = 'Novo Jogador';
         }
 
-        // Limpa o formulário do modal e define valores padrão
         const nicknameInput = document.getElementById('player-nickname');
         const nameInput = document.getElementById('player-name');
         const ratingInput = document.getElementById('player-rating');
-        const playerIdInput = document.getElementById('player-id'); // Campo oculto
+        const playerIdInput = document.getElementById('player-id'); 
 
         if (nicknameInput) nicknameInput.value = '';
         if (nameInput) nameInput.value = '';
         if (ratingInput) ratingInput.value = '1000'; // Valor padrão para novo jogador
-        if (playerIdInput) playerIdInput.value = ''; // Limpa o ID no campo oculto
+        if (playerIdInput) playerIdInput.value = ''; 
 
-        // Limpar mensagens de erro anteriores do formulário
         clearFormErrors();
 
-        // Exibe o modal
         if (playerModal) {
             playerModal.classList.add('show');
             playerModal.style.display = 'block';
-            // O listener windowClickHandler já está adicionado ao carregar a página
         }
     }
 
-    // Fecha o modal
     function closeModal() {
         if (playerModal) {
             playerModal.classList.remove('show');
             playerModal.style.display = 'none';
-            // Não remove o listener windowClickHandler aqui, ele gerencia o clique fora
         }
     }
 
-    // Lida com o clique fora do modal para fechar
     function windowClickHandler(event) {
-        // Se o clique foi fora do conteúdo do modal, mas dentro do modal (overlay)
         if (event.target === playerModal) {
-            closeModal(); // Fecha o modal
+            closeModal(); 
         }
     }
 
 
-    // Lida com o envio do formulário (criação ou edição)
     async function handlePlayerSubmit(e) {
-        e.preventDefault(); // Previne o envio padrão do formulário
+        e.preventDefault(); 
 
-        // Obtém referências aos inputs do formulário
         const nicknameInput = document.getElementById('player-nickname');
         const nameInput = document.getElementById('player-name');
         const ratingInput = document.getElementById('player-rating');
 
-        // Verifica se os elementos existem
         if (!nicknameInput || !nameInput || !ratingInput) {
             showNotification('Erro interno: Elementos do formulário não encontrados', 'error');
             return;
         }
 
-        // Obter dados do formulário (com trim para remover espaços em branco)
         const nickname = nicknameInput.value.trim();
         const name = nameInput.value.trim();
         const rating = parseInt(ratingInput.value);
