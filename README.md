@@ -9,13 +9,11 @@
 
 ### Frontend
 - **HTML**, **CSS**, **JavaScript**:
-  - Interface responsiva e interativa.
-  - Gerenciamento de estado e chamadas à API usando JavaScript.
 
 ### Dependências
-- **Lombok**: Redução de boilerplate no código.
-- **Hibernate**: ORM para mapeamento de entidades.
-- **Font Awesome**: Ícones para a interface.
+- **Lombok**
+- **Hibernate**
+- **Font Awesome**
 
 ### Configurar o application properties
 spring.datasource.url=jdbc:h2:mem:chessbrawl
