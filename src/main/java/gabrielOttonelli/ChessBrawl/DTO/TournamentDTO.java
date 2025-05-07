@@ -21,4 +21,7 @@ import jakarta.validation.constraints.*;
         private int playerCount;
         private int roundCount;
         private List<Long> playerIds= new ArrayList<>();
+        private String championName;
+        private String championNickname;
+        private Long championId;
     }

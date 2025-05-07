@@ -39,6 +39,10 @@ public class Tournament {
     @JsonIgnore
     private List<Round> rounds = new ArrayList<>();
 
+    @ManyToOne
+    @JoinColumn(name = "champion_player_id") 
+    private Player champion; 
+
     public enum TournamentStatus {
         CREATED, IN_PROGRESS, FINISHED
     }

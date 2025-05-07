@@ -291,9 +291,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const name = nameInput.value.trim();
         const rating = parseInt(ratingInput.value);
 
-        // Validação básica no frontend (pode adicionar mais regras)
         let isValid = true;
-        // Limpa erros anteriores antes de validar
         clearFormErrors();
 
         if (!nickname) {
@@ -304,22 +302,21 @@ document.addEventListener('DOMContentLoaded', function() {
              displayFieldError('name-error', 'Nome completo é obrigatório.');
              isValid = false;
          }
-        if (isNaN(rating) || rating < 100 || rating > 3000) {
-            displayFieldError('rating-error', 'Rating deve ser um número entre 100 e 3000.');
+
+        if (isNaN(rating) || rating <= 1 || rating >= 15000) {
+            displayFieldError('rating-error', 'Rating deve ser um número entre 1 e 15000.');
             isValid = false;
         }
 
         if (!isValid) {
              showNotification('Por favor, corrija os erros no formulário.', 'warning');
-             return; // Interrompe se a validação falhar
+             return; 
         }
 
-        // Preparar dados para enviar ao backend
         const playerData = {
             nickname: nickname,
             name: name,
-            rating: rating, // Usando 'rating' para corresponder ao DTO do backend
-            // Outros campos (tournamentPoints, stats) são gerenciados pelo backend
+            rating: rating, 
         };
 
         console.log('Enviando dados para o servidor:', JSON.stringify(playerData));
@@ -327,12 +324,10 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             let result;
             if (currentPlayerId) {
-                // Se currentPlayerId existe, é uma atualização (PUT)
                 console.log(`Atualizando jogador com ID: ${currentPlayerId}`);
                 result = await PlayerAPI.update(currentPlayerId, playerData);
                 showNotification('Jogador atualizado com sucesso!', 'success');
             } else {
-                // Se currentPlayerId é null, é uma criação (POST)
                  console.log('Criando novo jogador...');
                 result = await PlayerAPI.create(playerData);
                 showNotification('Jogador criado com sucesso!', 'success');
@@ -340,34 +335,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
             console.log('Resposta do servidor:', result);
 
-            closeModal(); // Fecha o modal após sucesso
-            fetchPlayers(); // Recarrega a lista de jogadores para mostrar a alteração
+            closeModal();
+            fetchPlayers(); 
 
         } catch (error) {
             console.error('Erro ao salvar jogador:', error);
-            // Exibir mensagem de erro do backend se disponível
             const errorMessage = error.message || 'Ocorreu um erro ao salvar o jogador.';
             showNotification(`Erro ao salvar jogador: ${errorMessage}`, 'error');
 
-            // TODO: Adicionar lógica mais sofisticada para exibir erros de validação específicos do backend
-            // Se o backend retornar erros de validação em um formato estruturado,
-            // você pode iterar sobre eles e chamar displayFieldError para os campos relevantes.
         }
     }
 
-    // Lida com a exclusão de jogador
     async function deletePlayer(id) {
-        // Exibe uma caixa de confirmação antes de excluir
+        
         if (!confirm('Tem certeza que deseja excluir este jogador? Esta ação é irreversível.')) {
-            return; // Cancela a exclusão se o usuário não confirmar
+            return; 
         }
 
         try {
             console.log(`Excluindo jogador com ID: ${id}`);
-            await PlayerAPI.delete(id); // Chama o método delete da PlayerAPI
+            await PlayerAPI.delete(id); 
 
             showNotification('Jogador excluído com sucesso!', 'success');
-            fetchPlayers(); // Recarrega a lista de jogadores após a exclusão para remover o jogador excluído
+            fetchPlayers();
 
         } catch (error) {
             console.error('Erro ao excluir jogador:', error);
@@ -376,38 +366,32 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --- Funções Auxiliares para Validação e Feedback ---
 
-    // Exibe uma mensagem de erro para um campo específico do formulário
     function displayFieldError(errorElementId, message) {
          const errorElement = document.getElementById(errorElementId);
          if (errorElement) {
              errorElement.textContent = message;
-             errorElement.style.display = 'block'; // Mostra o elemento de erro
-             // Opcional: Adicionar classe de erro ao input associado
+             errorElement.style.display = 'block'; 
              const inputId = errorElementId.replace('-error', '');
              const inputElement = document.getElementById(inputId);
              if (inputElement) {
-                 inputElement.classList.add('is-invalid'); // Adiciona classe para estilizar o input
+                 inputElement.classList.add('is-invalid'); 
              }
          }
     }
 
-    // Limpa todas as mensagens de erro do formulário
     function clearFormErrors() {
          const errorElements = playerForm.querySelectorAll('.form-error');
          errorElements.forEach(el => {
              el.textContent = '';
-             el.style.display = 'none'; // Esconde o elemento de erro
+             el.style.display = 'none'; 
          });
-          // Remove a classe de erro de todos os inputs
           const invalidInputs = playerForm.querySelectorAll('.is-invalid');
           invalidInputs.forEach(el => {
               el.classList.remove('is-invalid');
           });
     }
 
-    // TODO: Adicionar lógica de ordenação se necessário (usando o select #sort-by)
-    // function handleSortChange() { ... }
+    
 
 });
