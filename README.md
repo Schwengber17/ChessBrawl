@@ -38,4 +38,4 @@ spring.web.resources.chain.cache=false
 mvn spring-boot:run
 
 ### Acesse a aplicação no SEU navegador
-http://localhost:8080
+http://localhost:8080/index.html
