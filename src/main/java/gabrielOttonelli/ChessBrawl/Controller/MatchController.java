@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.*; // Anotações de mapeamento H
 
 @RestController // Indica que esta classe é um Controller REST
 // Define o caminho base, aninhando partidas sob rodadas e torneios
+// Este RequestMapping aplica-se a todos os métodos ABAIXO dele, a menos que o @GetMapping use um caminho absoluto (começando com /)
 @RequestMapping("/api/tournaments/{tournamentId}/rounds/{roundId}/matches")
 @RequiredArgsConstructor // Usa Lombok para gerar um construtor com todos os campos finais
 public class MatchController {
@@ -26,7 +27,7 @@ public class MatchController {
     public ResponseEntity<MatchDTO> getMatchById(
             @PathVariable Long tournamentId, // Pode ser usado para validação ou contexto
             @PathVariable Long roundId, // Pode ser usado para validação ou contexto
-            @PathVariable Long id) {
+            @PathVariable Long id) { // ID da partida (matchId)
         // @PathVariable extrai os IDs da URL
         // Chama o método do Service para obter a partida por ID como DTO
         MatchDTO match = matchService.findByID(id);
@@ -43,7 +44,7 @@ public class MatchController {
     public ResponseEntity<MatchDTO> startMatch(
             @PathVariable Long tournamentId, // Contexto
             @PathVariable Long roundId, // Contexto
-            @PathVariable Long id) {
+            @PathVariable Long id) { // ID da partida (matchId)
         // Chama o método do Service para iniciar a partida
         MatchDTO startedMatch = matchService.startMatch(id);
         // Retorna o DTO da partida iniciada com status HTTP 200 OK
@@ -96,25 +97,13 @@ public class MatchController {
         return ResponseEntity.ok(events);
     }
 
-    // Endpoint para obter os tipos de evento disponíveis (pode ser útil para o frontend)
-    // Mapeado para GET /api/tournaments/{tournamentId}/rounds/{roundId}/matches/event-types
-    // Nota: Este endpoint não precisa do ID da partida específica.
-    @GetMapping("/event-types")
-    public ResponseEntity<String[]> getEventTypes() {
-        // Chama um método no Service (ou diretamente na enumeração) para obter os nomes dos tipos de evento
-        // Assumindo um método getEventTypes() no MatchService que retorna String[]
-        String[] eventTypes = matchService.getEventTypes(); // TODO: Implementar getEventTypes() no MatchService
-        return ResponseEntity.ok(eventTypes);
-    }
 
-    // TODO: Endpoint para buscar todas as partidas de uma rodada (se não for incluído no RoundDTO)
+    // Endpoint para buscar todas as partidas de uma rodada
     // Mapeado para GET /api/tournaments/{tournamentId}/rounds/{roundId}/matches
-    // Isso seria um @GetMapping sem o /{id} no final
-    // @GetMapping
-    // public ResponseEntity<List<MatchDTO>> getMatchesByRound(@PathVariable Long roundId) {
-    //     // TODO: Implementar método getMatchesByRoundId no MatchService
-    //     // List<MatchDTO> matches = matchService.getMatchesByRoundId(roundId);
-    //     // return ResponseEntity.ok(matches);
-    //      return ResponseEntity.ok().build(); // Placeholder
-    // }
+    // Este é o @GetMapping sem o /{id} no final
+    @GetMapping
+    public ResponseEntity<List<MatchDTO>> getMatchesByRound(@PathVariable Long tournamentId, @PathVariable Long roundId) {
+        List<MatchDTO> matches = matchService.getMatchesByRoundId(roundId); // Método implementado no MatchService
+        return ResponseEntity.ok(matches);
+    }
 }

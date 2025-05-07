@@ -37,11 +37,16 @@ public class Player {
     private int tournamentPoints = 70;
 
     //Feature extras - Estatisticas pós jogo
-    private int originalMoves=0;
-    private int blundersMade=0;
-    private int advantageousPositions=0;
-    private int disrespectfulBehavior=0;
-    private int rage=0;
+    @Column(nullable = false) // originalMoves não pode ser nulo
+    private int originalMoves = 0;
+    @Column(nullable = false) // blundersMade não pode ser nulo
+    private int blundersMade = 0;
+    @Column(nullable = false) // advantageousPositions não pode ser nulo
+    private int advantageousPositions = 0;
+    @Column(nullable = false) // disrespectfulBehavior não pode ser nulo
+    private int disrespectfulBehavior = 0;
+    @Column(nullable = false) // rage não pode ser nulo
+    private int rage = 0;
     
     @ManyToMany(mappedBy = "players")
     @JsonIgnore

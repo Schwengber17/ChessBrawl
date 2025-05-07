@@ -165,7 +165,7 @@ public class PlayerService {
 
     // Método para atualizar estatísticas de um jogador (chamado por MatchService)
     @Transactional
-    public void updatePlayerStats(Player player, int tournamentPointsChange, int wins, int losses, int draws, int gamesPlayed, int movesMade, int originalMoves, int blundersMade, int advantageousPositions, int disrespectfulBehavior, int rage) {
+    public void updatePlayerStats(Player player, int tournamentPointsChange, int originalMoves, int blundersMade, int advantageousPositions, int disrespectfulBehavior, int rage) {
         // Atualiza os campos de estatísticas do jogador
         player.setTournamentPoints(player.getTournamentPoints() + tournamentPointsChange);
         player.setOriginalMoves(player.getOriginalMoves() + originalMoves);

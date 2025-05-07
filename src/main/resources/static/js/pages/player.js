@@ -1,4 +1,13 @@
-// Corrigindo o erro de "Cannot set properties of null (setting 'textContent')"
+// js/pages/player.js
+
+// Importa as funções da API e utilitários
+import { PlayerAPI } from '../api.js';
+// REMOVIDO formatDate da importação
+import { showNotification } from '../utils.js'; // Importa a função de notificação do utils.js
+// Importe outras funções de utils.js se necessário (ex: getUrlParams, validateForm, etc.)
+// import { getUrlParams, showNotification, validateForm } from '../utils.js';
+
+
 document.addEventListener('DOMContentLoaded', function() {
     // Elementos do DOM
     const playerForm = document.getElementById('player-form');
@@ -6,247 +15,399 @@ document.addEventListener('DOMContentLoaded', function() {
     const playerModal = document.getElementById('player-modal');
     const closeModalBtn = document.getElementById('close-modal');
     const playerFormTitle = document.getElementById('player-form-title');
-    
-    let currentPlayerId = null;
-    
-    // Carregar jogadores ao iniciar
+    const newPlayerBtn = document.getElementById('new-player-btn'); // Botão "Novo Jogador"
+    const searchPlayerInput = document.getElementById('search-player-input'); // Input de busca
+    const searchPlayerButton = document.getElementById('search-player-button'); // Botão de busca
+    // const notificationArea = document.getElementById('notification-area'); // Área de notificação (se existir, utils.js pode gerenciar globalmente)
+
+
+    let currentPlayerId = null; // Armazena o ID do jogador sendo editado
+
+    // Carregar jogadores ao iniciar a página
     fetchPlayers();
-    
+
     // Event listeners
     if (playerForm) {
         playerForm.addEventListener('submit', handlePlayerSubmit);
     }
-    
+
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', closeModal);
     }
-    
+
+    // Adicionar evento para abrir modal de criação
+    if (newPlayerBtn) {
+        newPlayerBtn.addEventListener('click', openCreateModal);
+    }
+
+    // Adicionar evento para o botão de busca
+    if (searchPlayerButton) {
+        searchPlayerButton.addEventListener('click', handlePlayerSearch);
+    }
+
+    // Adicionar evento para buscar ao pressionar Enter no input de busca
+    if (searchPlayerInput) {
+        searchPlayerInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault(); // Previne o comportamento padrão do Enter (submit)
+                handlePlayerSearch(); // Chama a função de busca
+            }
+        });
+    }
+
+    // Adicionar listener para fechar modal clicando fora dele
+    if (playerModal) {
+         window.addEventListener('click', windowClickHandler);
+    }
+
+
     // Funções
-    async function fetchPlayers() {
+
+    // Busca todos os jogadores ou filtra por termo de busca
+    async function fetchPlayers(searchTerm = '') {
         try {
-            console.log('Iniciando busca de jogadores...');
-            
-            // Mostrar indicador de carregamento
-            const playersList = document.getElementById('players-list');
+            console.log('Iniciando busca de jogadores com termo:', searchTerm);
+
+            // Mostrar indicador de carregamento na tabela
             if (playersList) {
-                playersList.innerHTML = '<tr><td colspan="4" class="text-center">Carregando jogadores...</td></tr>';
+                playersList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-4">
+                            <i class="fas fa-spinner fa-spin"></i> Carregando jogadores...
+                        </td>
+                    </tr>
+                `;
             }
-            
-            const response = await fetch('http://localhost:8080/api/players');
-            console.log('Resposta da API:', response);
-            
-            if (!response.ok) {
-                throw new Error(`Erro ${response.status}: ${response.statusText}`);
+
+            let players = [];
+            if (searchTerm) {
+                 // Se houver termo de busca, tenta buscar por nickname exato primeiro
+                 // Se a API do backend tiver um endpoint de busca por termo (ex: /api/players/search?q=...), use-o aqui.
+                 // Por enquanto, usamos getByNickname que busca um jogador exato.
+                 try {
+                     const player = await PlayerAPI.getByNickname(searchTerm);
+                     if (player) {
+                         players = [player]; // Se encontrou um jogador, coloca em uma lista
+                         showNotification(`Jogador encontrado com nickname "${searchTerm}".`, 'info');
+                     } else {
+                         players = []; // Se não encontrou, lista vazia
+                         showNotification(`Nenhum jogador encontrado com o nickname "${searchTerm}".`, 'warning');
+                     }
+                 } catch (error) {
+                      // Se getByNickname falhar (ex: 404 Not Found), trata como nenhum jogador encontrado
+                     console.warn(`Erro ao buscar jogador por nickname "${searchTerm}":`, error);
+                     players = [];
+                     showNotification(`Erro ao buscar jogador por nickname "${searchTerm}".`, 'error');
+                 }
+
+            } else {
+                // Se não houver termo de busca, busca todos os jogadores
+                players = await PlayerAPI.getAll();
+                console.log('Todos os jogadores recebidos:', players);
             }
-            
-            const players = await response.json();
-            console.log('Jogadores recebidos:', players);
-            
-            renderPlayers(players);
+
+            renderPlayers(players); // Renderiza a lista de jogadores recebida
+
         } catch (error) {
             console.error('Erro ao buscar jogadores:', error);
-            
             // Mostrar mensagem de erro na interface
-            const playersList = document.getElementById('players-list');
             if (playersList) {
-                playersList.innerHTML = `<tr><td colspan="4" class="text-center text-danger">
-                    Erro ao carregar jogadores: ${error.message}
-                </td></tr>`;
+                playersList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-red-500">
+                            <i class="fas fa-exclamation-triangle"></i> Erro ao carregar jogadores: ${error.message}
+                        </td>
+                    </tr>
+                `;
             }
+            showNotification(`Erro ao carregar jogadores: ${error.message}`, 'error'); // Usando showNotification do utils.js
         }
     }
-    
+
+    // Lida com a ação de busca de jogador (chamada pelo botão ou Enter)
+    function handlePlayerSearch() {
+        const searchTerm = searchPlayerInput.value.trim();
+        fetchPlayers(searchTerm); // Chama fetchPlayers com o termo de busca
+    }
+
+
+    // Renderiza a lista de jogadores na tabela HTML
     function renderPlayers(players) {
-        if (!playersList) return;
-        
-        playersList.innerHTML = '';
-        
-        if (players.length === 0) {
-            playersList.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum jogador cadastrado</td></tr>';
+        if (!playersList) return; // Verifica se o elemento da tabela existe
+
+        playersList.innerHTML = ''; // Limpa o corpo da tabela
+
+        if (!players || players.length === 0) {
+            playersList.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center py-4">Nenhum jogador cadastrado</td>
+                </tr>
+            `;
             return;
         }
-        
+
+        // Ordena jogadores por nickname (opcional, pode adicionar outras opções de ordenação)
+        players.sort((a, b) => (a.nickname || '').localeCompare(b.nickname || ''));
+
+
         players.forEach(player => {
             const row = document.createElement('tr');
-            
+            // Adiciona classes Tailwind para estilização da linha da tabela
+            row.className = 'border-b border-gray-200 hover:bg-gray-100';
+
+            // Preenche as células da linha com os dados do jogador
             row.innerHTML = `
-                <td>${player.nickname}</td>
-                <td>${player.name}</td>
-                <td>${player.rating}</td>
-                <td>
-                    <button class="btn btn-sm btn-primary edit-player" data-id="${player.id}">Editar</button>
-                    <button class="btn btn-sm btn-danger delete-player" data-id="${player.id}">Excluir</button>
+                <td class="py-3 px-6 text-left whitespace-nowrap">
+                     <div class="flex items-center">
+                        <span class="font-medium">${player.nickname || 'Sem Nickname'}</span>
+                    </div>
+                </td>
+                <td class="py-3 px-6 text-left">
+                    <div class="flex items-center">
+                        <span>${player.name || 'Sem Nome'}</span>
+                    </div>
+                </td>
+                <td class="py-3 px-6 text-left">
+                     <div class="flex items-center">
+                        <span>${player.rating || 0}</span> </div>
+                </td>
+                <td class="py-3 px-6 text-center">
+                    <div class="flex item-center justify-center space-x-4"> <a href="player-detail.html?id=${player.id}" class="w-4 mr-2 transform hover:text-blue-500 hover:scale-110" title="Ver Detalhes">
+                            <i class="fas fa-eye"></i> </a>
+                        <button class="w-4 mr-2 transform hover:text-yellow-500 hover:scale-110 edit-player" data-id="${player.id}" title="Editar Jogador">
+                            <i class="fas fa-edit"></i> </button>
+                        <button class="w-4 mr-2 transform hover:text-red-500 hover:scale-110 delete-player" data-id="${player.id}" title="Excluir Jogador">
+                            <i class="fas fa-trash-alt"></i> </button>
+                    </div>
                 </td>
             `;
-            
-            playersList.appendChild(row);
-            
-            // Adicionar event listeners aos botões
+
+            playersList.appendChild(row); // Adiciona a linha ao corpo da tabela
+
+            // Adicionar event listeners aos botões "Editar" e "Excluir"
+            // Usando classes para selecionar os botões dentro da linha recém-adicionada
             row.querySelector('.edit-player').addEventListener('click', () => openEditModal(player));
             row.querySelector('.delete-player').addEventListener('click', () => deletePlayer(player.id));
         });
     }
-    
+
+    // Abre o modal para edição de jogador
     function openEditModal(player) {
-        currentPlayerId = player.id;
-        
-        // Verificar se o elemento existe antes de definir textContent
+        currentPlayerId = player.id; // Define o ID do jogador atual
+
+        // Atualiza o título do modal
         if (playerFormTitle) {
             playerFormTitle.textContent = 'Editar Jogador';
         }
-        
+
+        // Preenche o formulário do modal com os dados do jogador
         const nicknameInput = document.getElementById('player-nickname');
         const nameInput = document.getElementById('player-name');
         const ratingInput = document.getElementById('player-rating');
-        
-        if (nicknameInput) nicknameInput.value = player.nickname;
-        if (nameInput) nameInput.value = player.name;
-        if (ratingInput) ratingInput.value = player.rankingPoints;
-        
+        const playerIdInput = document.getElementById('player-id'); // Campo oculto para o ID
+
+        if (nicknameInput) nicknameInput.value = player.nickname || '';
+        if (nameInput) nameInput.value = player.name || '';
+        if (ratingInput) ratingInput.value = player.rating || 1000; // Usando player.rating, valor padrão 1000
+        if (playerIdInput) playerIdInput.value = player.id || ''; // Define o ID no campo oculto
+
+        // Limpar mensagens de erro anteriores do formulário
+        clearFormErrors();
+
+        // Exibe o modal
         if (playerModal) {
             playerModal.classList.add('show');
             playerModal.style.display = 'block';
+             // O listener windowClickHandler já está adicionado ao carregar a página
         }
     }
-    
+
+    // Abre o modal para criação de novo jogador
     function openCreateModal() {
-        currentPlayerId = null;
-        
-        // Verificar se o elemento existe antes de definir textContent
+        currentPlayerId = null; // Reseta o ID do jogador atual (indicando criação)
+
+        // Atualiza o título do modal
         if (playerFormTitle) {
             playerFormTitle.textContent = 'Novo Jogador';
         }
-        
+
+        // Limpa o formulário do modal e define valores padrão
         const nicknameInput = document.getElementById('player-nickname');
         const nameInput = document.getElementById('player-name');
         const ratingInput = document.getElementById('player-rating');
-        
+        const playerIdInput = document.getElementById('player-id'); // Campo oculto
+
         if (nicknameInput) nicknameInput.value = '';
         if (nameInput) nameInput.value = '';
-        if (ratingInput) ratingInput.value = '1000';
-        
+        if (ratingInput) ratingInput.value = '1000'; // Valor padrão para novo jogador
+        if (playerIdInput) playerIdInput.value = ''; // Limpa o ID no campo oculto
+
+        // Limpar mensagens de erro anteriores do formulário
+        clearFormErrors();
+
+        // Exibe o modal
         if (playerModal) {
             playerModal.classList.add('show');
             playerModal.style.display = 'block';
+            // O listener windowClickHandler já está adicionado ao carregar a página
         }
     }
-    
+
+    // Fecha o modal
     function closeModal() {
         if (playerModal) {
             playerModal.classList.remove('show');
             playerModal.style.display = 'none';
+            // Não remove o listener windowClickHandler aqui, ele gerencia o clique fora
         }
     }
-    
+
+    // Lida com o clique fora do modal para fechar
+    function windowClickHandler(event) {
+        // Se o clique foi fora do conteúdo do modal, mas dentro do modal (overlay)
+        if (event.target === playerModal) {
+            closeModal(); // Fecha o modal
+        }
+    }
+
+
+    // Lida com o envio do formulário (criação ou edição)
     async function handlePlayerSubmit(e) {
-        e.preventDefault();
-        
+        e.preventDefault(); // Previne o envio padrão do formulário
+
+        // Obtém referências aos inputs do formulário
         const nicknameInput = document.getElementById('player-nickname');
         const nameInput = document.getElementById('player-name');
         const ratingInput = document.getElementById('player-rating');
-        
+
+        // Verifica se os elementos existem
         if (!nicknameInput || !nameInput || !ratingInput) {
-            showNotification('Erro: Elementos do formulário não encontrados', 'error');
+            showNotification('Erro interno: Elementos do formulário não encontrados', 'error');
             return;
         }
-        
-        // Obter dados do formulário
+
+        // Obter dados do formulário (com trim para remover espaços em branco)
         const nickname = nicknameInput.value.trim();
         const name = nameInput.value.trim();
         const rating = parseInt(ratingInput.value);
-        
-        // Validação básica
-        if (!nickname || !name || isNaN(rating)) {
-            showNotification('Preencha todos os campos corretamente', 'error');
-            return;
+
+        // Validação básica no frontend (pode adicionar mais regras)
+        let isValid = true;
+        // Limpa erros anteriores antes de validar
+        clearFormErrors();
+
+        if (!nickname) {
+             displayFieldError('nickname-error', 'Nickname é obrigatório.');
+             isValid = false;
         }
-        
-        // Preparar dados
+         if (!name) {
+             displayFieldError('name-error', 'Nome completo é obrigatório.');
+             isValid = false;
+         }
+        if (isNaN(rating) || rating < 100 || rating > 3000) {
+            displayFieldError('rating-error', 'Rating deve ser um número entre 100 e 3000.');
+            isValid = false;
+        }
+
+        if (!isValid) {
+             showNotification('Por favor, corrija os erros no formulário.', 'warning');
+             return; // Interrompe se a validação falhar
+        }
+
+        // Preparar dados para enviar ao backend
         const playerData = {
             nickname: nickname,
             name: name,
-            rankingPoints: rating,
-            // Inicializar outros campos com valores padrão
-            tournamentPoints: 0,
-            originalMoves: 0,
-            blunders: 0,
-            advantagousPositions: 0,
-            disrespectfulBehavior: 0,
-            rageAttacks: 0,
-            wins: 0,
-            losses: 0,
-            draws: 0,
-            gamesPlayed: 0,
-            movesMade: 0
+            rating: rating, // Usando 'rating' para corresponder ao DTO do backend
+            // Outros campos (tournamentPoints, stats) são gerenciados pelo backend
         };
-        
-        if (currentPlayerId) {
-            playerData.id = currentPlayerId;
-        }
-        
+
         console.log('Enviando dados para o servidor:', JSON.stringify(playerData));
-        
+
         try {
-            const url = currentPlayerId 
-                ? `http://localhost:8080/api/players/${currentPlayerId}`
-                : 'http://localhost:8080/api/players';
-            
-            const response = await fetch(url, {
-                method: currentPlayerId ? 'PUT' : 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(playerData)
-            });
-            
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `Erro ${response.status}: ${response.statusText}`);
+            let result;
+            if (currentPlayerId) {
+                // Se currentPlayerId existe, é uma atualização (PUT)
+                console.log(`Atualizando jogador com ID: ${currentPlayerId}`);
+                result = await PlayerAPI.update(currentPlayerId, playerData);
+                showNotification('Jogador atualizado com sucesso!', 'success');
+            } else {
+                // Se currentPlayerId é null, é uma criação (POST)
+                 console.log('Criando novo jogador...');
+                result = await PlayerAPI.create(playerData);
+                showNotification('Jogador criado com sucesso!', 'success');
             }
-            
-            const result = await response.json();
+
             console.log('Resposta do servidor:', result);
-            
-            showNotification(currentPlayerId ? 'Jogador atualizado com sucesso!' : 'Jogador criado com sucesso!', 'success');
-            closeModal();
-            fetchPlayers();
+
+            closeModal(); // Fecha o modal após sucesso
+            fetchPlayers(); // Recarrega a lista de jogadores para mostrar a alteração
+
         } catch (error) {
             console.error('Erro ao salvar jogador:', error);
-            showNotification(`Erro ao salvar jogador: ${error.message}`, 'error');
+            // Exibir mensagem de erro do backend se disponível
+            const errorMessage = error.message || 'Ocorreu um erro ao salvar o jogador.';
+            showNotification(`Erro ao salvar jogador: ${errorMessage}`, 'error');
+
+            // TODO: Adicionar lógica mais sofisticada para exibir erros de validação específicos do backend
+            // Se o backend retornar erros de validação em um formato estruturado,
+            // você pode iterar sobre eles e chamar displayFieldError para os campos relevantes.
         }
     }
-    
+
+    // Lida com a exclusão de jogador
     async function deletePlayer(id) {
-        if (!confirm('Tem certeza que deseja excluir este jogador?')) {
-            return;
+        // Exibe uma caixa de confirmação antes de excluir
+        if (!confirm('Tem certeza que deseja excluir este jogador? Esta ação é irreversível.')) {
+            return; // Cancela a exclusão se o usuário não confirmar
         }
-        
+
         try {
-            const response = await fetch(`http://localhost:8080/api/players/${id}`, {
-                method: 'DELETE'
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Erro ${response.status}: ${response.statusText}`);
-            }
-            
+            console.log(`Excluindo jogador com ID: ${id}`);
+            await PlayerAPI.delete(id); // Chama o método delete da PlayerAPI
+
             showNotification('Jogador excluído com sucesso!', 'success');
-            fetchPlayers();
+            fetchPlayers(); // Recarrega a lista de jogadores após a exclusão para remover o jogador excluído
+
         } catch (error) {
             console.error('Erro ao excluir jogador:', error);
-            showNotification(`Erro ao excluir jogador: ${error.message}`, 'error');
+             const errorMessage = error.message || 'Ocorreu um erro ao excluir o jogador.';
+            showNotification(`Erro ao excluir jogador: ${errorMessage}`, 'error');
         }
     }
-    
-    // Função para mostrar notificações
-    function showNotification(message, type) {
-        // Implementação simples de notificação
-        alert(message);
+
+    // --- Funções Auxiliares para Validação e Feedback ---
+
+    // Exibe uma mensagem de erro para um campo específico do formulário
+    function displayFieldError(errorElementId, message) {
+         const errorElement = document.getElementById(errorElementId);
+         if (errorElement) {
+             errorElement.textContent = message;
+             errorElement.style.display = 'block'; // Mostra o elemento de erro
+             // Opcional: Adicionar classe de erro ao input associado
+             const inputId = errorElementId.replace('-error', '');
+             const inputElement = document.getElementById(inputId);
+             if (inputElement) {
+                 inputElement.classList.add('is-invalid'); // Adiciona classe para estilizar o input
+             }
+         }
     }
-    
-    // Adicionar botão para criar novo jogador
-    const newPlayerBtn = document.getElementById('new-player-btn');
-    if (newPlayerBtn) {
-        newPlayerBtn.addEventListener('click', openCreateModal);
+
+    // Limpa todas as mensagens de erro do formulário
+    function clearFormErrors() {
+         const errorElements = playerForm.querySelectorAll('.form-error');
+         errorElements.forEach(el => {
+             el.textContent = '';
+             el.style.display = 'none'; // Esconde o elemento de erro
+         });
+          // Remove a classe de erro de todos os inputs
+          const invalidInputs = playerForm.querySelectorAll('.is-invalid');
+          invalidInputs.forEach(el => {
+              el.classList.remove('is-invalid');
+          });
     }
+
+    // TODO: Adicionar lógica de ordenação se necessário (usando o select #sort-by)
+    // function handleSortChange() { ... }
+
 });

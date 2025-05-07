@@ -6,9 +6,8 @@
     <title>Detalhes do Torneio - Chess Brawl</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/pages/tournament-detail.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
+    <link rel="stylesheet" href="css/pages/tournament-detail.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    </head>
 <body>
     <header class="main-header">
         <div class="container">
@@ -30,58 +29,53 @@
     <main class="container">
         <div class="page-header">
             <div class="tournament-title">
-                <h2 id="tournament-name">Carregando torneio...</h2>
-                <span id="tournament-status" class="status-badge">...</span>
-            </div>
-            <a href="tournaments.html" class="btn btn-outline">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </a>
-        </div>
-
-        <div id="tournament-loading" class="loading-container">
-            <div class="loading">
-                <i class="fas fa-spinner fa-spin"></i> Carregando dados do torneio...
-            </div>
-        </div>
-
-        <div id="tournament-content" style="display: none;">
-            <div class="tournament-actions">
-                <button id="start-tournament-btn" class="btn btn-primary" style="display: none;">
+                <h2 id="tournament-name">Carregando...</h2>
+                <span id="tournament-status" class="status-tag"></span> </div>
+            <div class="page-actions">
+                 <button id="start-tournament-btn" class="btn btn-primary hidden">
                     <i class="fas fa-play"></i> Iniciar Torneio
                 </button>
-            </div>
-
-            <div class="tournament-sections">
-                <section class="tournament-section">
-                    <h3>Classificação</h3>
-                    <div class="card">
-                        <table class="table ranking-table">
-                            <thead>
-                                <tr>
-                                    <th>Pos.</th>
-                                    <th>Jogador</th>
-                                    <th>Nome</th>
-                                    <th class="text-center">Pontos</th>
-                                </tr>
-                            </thead>
-                            <tbody id="ranking-table-body">
-                                <!-- Dados da classificação serão inseridos aqui -->
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <section class="tournament-section">
-                    <h3>Rodadas</h3>
-                    <div id="rounds-container">
-                        <!-- Rodadas serão inseridas aqui -->
-                    </div>
-                </section>
+                <a href="tournaments.html" class="btn btn-outline">
+                    <i class="fas fa-arrow-left"></i> Voltar para Torneios
+                </a>
             </div>
         </div>
+
+        <div id="tournament-loading" class="loading">
+            <i class="fas fa-spinner fa-spin"></i> Carregando detalhes do torneio...
+        </div>
+
+        <div id="tournament-content" class="hidden">
+            <section class="tournament-section">
+                <h3>Classificação</h3>
+                <div class="card">
+                    <table class="table ranking-table">
+                        <thead>
+                            <tr>
+                                <th>Pos.</th>
+                                <th>Jogador</th>
+                                <th>Nome</th>
+                                <th class="text-center">Pontos</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ranking-table-body">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="tournament-section">
+                <h3>Rodadas</h3>
+                 <div id="rounds-container">
+                    </div>
+            </section>
+        </div>
+
+         <div id="notification-area" class="mt-6">
+            </div>
+
     </main>
 
-    <!-- Template para rodada -->
     <template id="round-template">
         <div class="round-card card">
             <div class="round-header">
@@ -89,12 +83,10 @@
                 <span class="round-status"></span>
             </div>
             <div class="matches-container">
-                <!-- Partidas serão inseridas aqui -->
-            </div>
+                </div>
         </div>
     </template>
 
-    <!-- Template para partida -->
     <template id="match-template">
         <div class="match-card">
             <div class="match-players">
@@ -121,8 +113,8 @@
         </div>
     </footer>
 
-    <script src="js/utils.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/pages/tournament-detail.js"></script>
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/api.js"></script>
+    <script type="module" src="js/pages/tournament-detail.js"></script>
 </body>
 </html>

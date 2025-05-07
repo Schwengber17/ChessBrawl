@@ -1,297 +1,339 @@
-// Elementos DOM
-const tournamentName = document.getElementById("tournament-name")
-const tournamentStatus = document.getElementById("tournament-status")
-const tournamentLoading = document.getElementById("tournament-loading")
-const tournamentContent = document.getElementById("tournament-content")
-const rankingTableBody = document.getElementById("ranking-table-body")
-const roundsContainer = document.getElementById("rounds-container")
-const startTournamentBtn = document.getElementById("start-tournament-btn")
+// js/pages/tournament-detail.js
 
-// Templates
-const roundTemplate = document.getElementById("round-template")
-const matchTemplate = document.getElementById("match-template")
+// Importa as funções da API e utilitários
+// Importa APIs necessárias
+import { TournamentAPI, RoundAPI, MatchAPI } from '../api.js';
+// Importa utilitários, incluindo getRoundStatusText
+import { showNotification, getUrlParams, getStatusText, getMatchStatusText, getRoundStatusText } from '../utils.js';
 
-// Estado da aplicação
-let tournament = null
-let rounds = []
-let ranking = []
+document.addEventListener('DOMContentLoaded', () => {
+    // Elementos do DOM
+    const tournamentNameElement = document.getElementById('tournament-name'); // Renomeado para evitar conflito
+    const tournamentStatusElement = document.getElementById('tournament-status'); // Renomeado para evitar conflito
+    const tournamentLoading = document.getElementById('tournament-loading');
+    const tournamentContent = document.getElementById('tournament-content');
+    const rankingTableBody = document.getElementById('ranking-table-body');
+    const roundsContainer = document.getElementById('rounds-container');
+    const startTournamentBtn = document.getElementById('start-tournament-btn');
+    const backBtn = document.getElementById('back-btn'); // Botão voltar
 
-// Utilitários (declaração das funções faltantes)
-function getUrlParams() {
-  const urlSearchParams = new URLSearchParams(window.location.search)
-  return Object.fromEntries(urlSearchParams.entries())
-}
+    // Templates
+    const roundTemplate = document.getElementById('round-template');
+    const matchTemplate = document.getElementById('match-template');
 
-async function fetchAPI(url) {
-  const response = await fetch(`/api${url}`)
-  if (!response.ok) {
-    const message = await response.text()
-    throw new Error(`${response.status}: ${message}`)
-  }
-  return await response.json()
-}
+    // Estado da aplicação
+    let tournamentId = null; // Armazenará o ID do torneio da URL
+    let currentTournamentData = null; // Armazenará os dados completos do torneio (detalhes básicos)
 
-function showNotification(message, type = "info") {
-  const notificationDiv = document.createElement("div")
-  notificationDiv.className = `notification notification-${type}`
-  notificationDiv.textContent = message
 
-  document.body.appendChild(notificationDiv)
+    // Inicialização
+    // Obter ID do torneio da URL
+    const params = getUrlParams();
+    tournamentId = params.id;
 
-  setTimeout(() => {
-    notificationDiv.remove()
-  }, 3000)
-}
-
-// Inicialização
-document.addEventListener("DOMContentLoaded", () => {
-  // Obter ID do torneio da URL
-  const params = getUrlParams()
-  const tournamentId = params.id
-
-  if (!tournamentId) {
-    showNotification("ID do torneio não especificado", "error")
-    setTimeout(() => {
-      window.location.href = "tournaments.html"
-    }, 2000)
-    return
-  }
-
-  // Carregar dados do torneio
-  loadTournamentData(tournamentId)
-
-  // Configurar eventos
-  startTournamentBtn.addEventListener("click", () => startTournament(tournamentId))
-})
-
-// Carregar dados do torneio
-async function loadTournamentData(tournamentId) {
-  try {
-    showLoading(true)
-
-    tournament = await fetchAPI(`/tournaments/${tournamentId}`)
-    console.log("Torneio carregado:", tournament)
-
-    // Carregar rodadas
-    rounds = await fetchAPI(`/tournaments/${tournamentId}/rounds`)
-    console.log("Rodadas carregadas:", rounds)
-
-    // Carregar partidas para cada rodada
-    for (const round of rounds) {
-      try {
-        const matches = await fetchAPI(`/rounds/${round.id}/matches`)
-        round.matches = matches
-        console.log(`Partidas da rodada ${round.roundNumber}:`, matches)
-      } catch (error) {
-        console.error(`Erro ao carregar partidas da rodada ${round.id}:`, error)
-        round.matches = []
-      }
+    if (!tournamentId) {
+        showNotification('ID do torneio não especificado na URL.', 'error');
+        // Redirecionar de volta para a lista de torneios após um tempo
+        setTimeout(() => {
+            window.location.href = 'tournaments.html';
+        }, 2000);
+        return; // Interrompe a execução se o ID não estiver presente
     }
 
-    ranking = await fetchAPI(`/tournaments/${tournamentId}/ranking`)
-    console.log("Ranking carregado:", ranking)
+    // Carregar dados do torneio (detalhes, ranking, rodadas)
+    loadTournamentData(tournamentId);
 
-    // Renderizar dados
-    renderTournamentData()
-  } catch (error) {
-    console.error("Erro ao carregar dados:", error)
-    showNotification(error.message, "error")
-  } finally {
-    showLoading(false)
-  }
-}
+    // Configurar eventos
+    if (startTournamentBtn) {
+        startTournamentBtn.addEventListener('click', startTournament);
+    }
 
-// Renderizar dados do torneio
-function renderTournamentData() {
-  if (!tournament || !tournament.status) {
-    console.error("Torneio ou status do torneio não carregado corretamente.")
-    showNotification("Erro ao carregar dados do torneio.", "error")
-    return
-  }
+    // Evento para o botão voltar (já configurado no HTML, mas pode adicionar JS se necessário)
+    // if (backBtn) {
+    //     backBtn.addEventListener('click', () => {
+    //         window.history.back(); // Volta para a página anterior
+    //     });
+    // }
 
-  // Atualizar título e status
-  tournamentName.textContent = tournament.name
-  tournamentStatus.textContent = getStatusText(tournament.status)
-  tournamentStatus.className = `status-badge status-${tournament.status.toLowerCase()}`
 
-  // Mostrar botão de iniciar se o torneio estiver criado
-  if (tournament.status === "CREATED") {
-    startTournamentBtn.style.display = "block"
-  } else {
-    startTournamentBtn.style.display = "none"
-  }
+    // --- Funções ---
 
-  // Renderizar classificação
-  renderRanking()
-  renderRounds()
-}
+    // Carrega todos os dados do torneio (detalhes, ranking, rodadas)
+    async function loadTournamentData(id) {
+        // Mostra indicador de carregamento
+        showLoading(true);
 
-// Renderizar classificação
-function renderRanking() {
-  // Limpar tabela
-  rankingTableBody.innerHTML = ""
+        try {
+            console.log(`Buscando dados do torneio com ID: ${id}`);
 
-  // Adicionar jogadores
-  ranking.forEach((player, index) => {
-    const row = document.createElement("tr")
+            // 1. Busca os detalhes básicos do torneio
+            const tournament = await TournamentAPI.getById(id);
+            console.log("Dados básicos do torneio recebidos:", tournament);
+            currentTournamentData = tournament; // Armazena os dados básicos
 
-    row.innerHTML = `
-            <td>${index + 1}</td>
-            <td>${player.nickname}</td>
-            <td>${player.name}</td>
-            <td class="text-center">${player.tournamentPoints || 0}</td>
-        `
+            // Renderiza os detalhes básicos do torneio
+            renderTournamentDetails(tournament);
 
-    rankingTableBody.appendChild(row)
-  })
-}
+            // 2. Busca o ranking separadamente
+            console.log(`Buscando ranking para o torneio com ID: ${id}`);
+            // Chama o método getRanking da TournamentAPI (assumindo que existe e retorna List<PlayerDTO>)
+            const rankingData = await TournamentAPI.getRanking(id);
+            console.log("Dados do ranking recebidos:", rankingData);
+            // Renderiza o ranking com os dados recebidos
+            renderRanking(rankingData);
 
-// Renderizar rodadas
-function renderRounds() {
-  // Limpar container
-  roundsContainer.innerHTML = ""
 
-  if (rounds.length === 0) {
-    roundsContainer.innerHTML = `
-            <div class="empty-state">
-                <p>Nenhuma rodada disponível. Inicie o torneio para criar a primeira rodada.</p>
-            </div>
-        `
-    return
-  }
+            // 3. Busca as rodadas separadamente
+            console.log(`Buscando rodadas para o torneio com ID: ${id}`);
+            // Chama o método getByTournament da RoundAPI (assumindo que existe e retorna List<RoundDTO>)
+            // E que cada RoundDTO retornado INCLUI a lista de MatchDTOs
+            const roundsData = await RoundAPI.getByTournament(id);
+            console.log("Dados das rodadas recebidos:", roundsData);
+            // Renderiza as rodadas com os dados recebidos
+            renderRounds(roundsData);
 
-  // Ordenar rodadas por número
-  rounds.sort((a, b) => a.roundNumber - b.roundNumber)
 
-  // Criar elemento para cada rodada
-  rounds.forEach((round) => {
-    const roundElement = roundTemplate.content.cloneNode(true)
+            // Controla a visibilidade do botão Iniciar Torneio com base no status do torneio básico
+            updateStartButtonState(tournament.status);
 
-    // Preencher dados
-    roundElement.querySelector(".round-number").textContent = round.roundNumber
+            // Oculta indicador de carregamento e mostra conteúdo
+            showLoading(false);
+            if(tournamentContent) tournamentContent.classList.remove('hidden');
 
-    const statusElement = roundElement.querySelector(".round-status")
-    statusElement.textContent = getRoundStatusText(round.status)
-    statusElement.className = `round-status status-${round.status.toLowerCase()}`
 
-    const matchesContainer = roundElement.querySelector(".matches-container")
-
-    if (!round.matches || round.matches.length === 0) {
-      matchesContainer.innerHTML = `
-                <div class="empty-matches">
-                    <p>Nenhuma partida disponível para esta rodada.</p>
+        } catch (error) {
+            console.error('Erro ao carregar dados do torneio:', error);
+            // Mostra mensagem de erro na interface
+            if(tournamentContent) tournamentContent.innerHTML = `
+                <div class="error-message">
+                    <p><i class="fas fa-exclamation-triangle"></i> Erro ao carregar detalhes do torneio.</p>
+                    <p>${error.message}</p>
                 </div>
-            `
-    } else {
-      round.matches.forEach((match) => {
-        const matchElement = matchTemplate.content.cloneNode(true)
-
-        matchElement.querySelector(".player1 .player-nickname").textContent = match.player1Nickname
-        matchElement.querySelector(".player2 .player-nickname").textContent = match.player2Nickname
-
-        const matchStatus = matchElement.querySelector(".match-status")
-        matchStatus.textContent = getMatchStatusText(match.status, match)
-
-        const viewButton = matchElement.querySelector(".view-match")
-        viewButton.href = `match-detail.html?id=${match.id}`
-
-        matchesContainer.appendChild(matchElement)
-      })
+            `;
+            showNotification(`Erro ao carregar torneio: ${error.message}`, 'error');
+            // Oculta indicador de carregamento
+            showLoading(false);
+            if(tournamentContent) tournamentContent.classList.remove('hidden'); // Mostra a área de conteúdo mesmo com erro
+        }
     }
 
-    roundsContainer.appendChild(roundElement)
-  })
-}
-
-// Iniciar torneio
-async function startTournament(tournamentId) {
-  try {
-    // Confirmar ação
-    if (!confirm("Tem certeza que deseja iniciar o torneio? Esta ação não pode ser desfeita.")) {
-      return
+    // Renderiza os detalhes básicos do torneio (nome, status)
+    function renderTournamentDetails(tournament) {
+        if (tournamentNameElement) {
+            tournamentNameElement.textContent = tournament.name || 'Torneio sem nome';
+        }
+        if (tournamentStatusElement) {
+            // Usa getStatusText do utils.js
+            tournamentStatusElement.textContent = getStatusText(tournament.status);
+            // Adiciona classe para estilizar o status (ex: status-created, status-in_progress)
+            tournamentStatusElement.className = `status-tag status-${(tournament.status || '').toLowerCase()}`;
+        }
     }
 
-    showNotification("Iniciando torneio...", "info")
+    // Renderiza a tabela de classificação
+    function renderRanking(rankingData) {
+        if (!rankingTableBody) {
+             console.error("Elemento #ranking-table-body não encontrado para renderização.");
+             return;
+        }
 
-    // Iniciar torneio
-    const response = await fetch(`/api/tournaments/${tournamentId}/start`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
+        rankingTableBody.innerHTML = ''; // Limpa o corpo da tabela
 
-    if (!response.ok) {
-      throw new Error(`Erro ao iniciar torneio: ${response.status}`)
+        if (!rankingData || rankingData.length === 0) {
+            rankingTableBody.innerHTML = '<tr><td colspan="4" class="text-center">Ranking não disponível ou vazio.</td></tr>';
+            return;
+        }
+
+        // Ordena o ranking por pontos de torneio (descendente)
+        rankingData.sort((a, b) => (b.tournamentPoints || 0) - (a.tournamentPoints || 0));
+
+        rankingData.forEach((player, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td>${player.nickname || 'Sem Nickname'}</td>
+                <td>${player.name || 'Sem Nome'}</td>
+                <td class="text-center">${player.tournamentPoints || 0}</td>
+            `;
+            rankingTableBody.appendChild(row);
+        });
     }
 
-    const data = await response.json()
-    console.log("Torneio iniciado:", data)
+    // Renderiza as rodadas e suas partidas
+    function renderRounds(roundsData) {
+        if (!roundsContainer || !roundTemplate || !matchTemplate) {
+             console.error("Elementos/Templates necessários para renderizar rodadas não encontrados.");
+             return;
+        }
 
-    // Recarregar dados
-    showNotification("Torneio iniciado com sucesso!", "success")
-    setTimeout(() => {
-      loadTournamentData(tournamentId)
-    }, 1000)
-  } catch (error) {
-    console.error("Erro ao iniciar torneio:", error)
-    showNotification(error.message, "error")
-  }
-}
+        roundsContainer.innerHTML = ''; // Limpa o contêiner de rodadas
 
-// Utilitários
-function showLoading(isLoading) {
-  if (isLoading) {
-    tournamentLoading.style.display = "flex"
-    tournamentContent.style.display = "none"
-  } else {
-    tournamentLoading.style.display = "none"
-    tournamentContent.style.display = "block"
-  }
-}
+        if (!roundsData || roundsData.length === 0) {
+            roundsContainer.innerHTML = '<div class="empty-state"><p>Nenhuma rodada encontrada para este torneio.</p></div>';
+            return;
+        }
 
-function getStatusText(status) {
-  switch (status) {
-    case "CREATED":
-      return "Criado"
-    case "IN_PROGRESS":
-      return "Em Andamento"
-    case "FINISHED":
-      return "Finalizado"
-    default:
-      return status
-  }
-}
+        // Ordena as rodadas por número (ascendente)
+        roundsData.sort((a, b) => (a.roundNumber || 0) - (b.roundNumber || 0));
 
-function getRoundStatusText(status) {
-  switch (status) {
-    case "SCHEDULED":
-      return "Agendada"
-    case "IN_PROGRESS":
-      return "Em Andamento"
-    case "FINISHED":
-      return "Finalizada"
-    default:
-      return status
-  }
-}
 
-function getMatchStatusText(status, match) {
-  switch (status) {
-    case "SCHEDULED":
-      return "Agendada"
-    case "IN_PROGRESS":
-      return "Em Andamento"
-    case "FINISHED":
-      if (match.result === "DRAW") {
-        return "Empate"
-      } else if (match.winnerId) {
-        const winnerNickname = match.winnerId === match.player1Id ? match.player1Nickname : match.player2Nickname
-        return `Vencedor: ${winnerNickname}`
-      } else {
-        return "Finalizada"
+        roundsData.forEach(round => {
+            const roundClone = document.importNode(roundTemplate.content, true);
+
+            // Preenche os dados da rodada
+            const roundNumberElement = roundClone.querySelector('.round-title .round-number'); // Seletor corrigido
+            if(roundNumberElement) roundNumberElement.textContent = round.roundNumber || '?';
+
+            const roundStatusElement = roundClone.querySelector('.round-status');
+            if(roundStatusElement) {
+                // Usa getRoundStatusText do utils.js
+                // VERIFICAR SE round.status É O STATUS CORRETO DA RODADA
+                roundStatusElement.textContent = getRoundStatusText(round.status);
+                 // Adiciona classe para estilizar o status da rodada
+                roundStatusElement.className += ` status-${(round.status || '').toLowerCase()}`;
+            }
+
+
+            const matchesContainer = roundClone.querySelector('.matches-container');
+            if (matchesContainer && round.matches && Array.isArray(round.matches)) {
+                // Renderiza as partidas desta rodada
+                round.matches.forEach(match => {
+                    const matchClone = document.importNode(matchTemplate.content, true);
+
+                    // Preenche os dados da partida
+                    const player1NicknameElement = matchClone.querySelector('.match-players .player1 .player-nickname');
+                    if(player1NicknameElement) player1NicknameElement.textContent = match.player1Nickname || 'Jogador 1';
+
+                    const player2NicknameElement = matchClone.querySelector('.match-players .player2 .player-nickname');
+                    if(player2NicknameElement) player2NicknameElement.textContent = match.player2Nickname || 'Jogador 2';
+
+                    const matchStatusElement = matchClone.querySelector('.match-status');
+                    if(matchStatusElement) {
+                         // Usa getMatchStatusText do utils.js
+                         // VERIFICAR SE match.status É O STATUS CORRETO DA PARTIDA
+                         matchStatusElement.textContent = getMatchStatusText(match.status, match); // Passa o objeto match para lógica de exibição
+                         // Adiciona classe para estilizar o status da partida
+                         matchStatusElement.className += ` status-${(match.status || '').toLowerCase()}`;
+                    }
+
+
+                    // Configura o link "Ver Partida"
+                    const viewMatchLink = matchClone.querySelector('.view-match');
+                    if(viewMatchLink) {
+                         // *** CRUCIAL: Passa tournamentId, roundId e matchId na URL ***
+                         // Usa o tournamentId armazenado no estado da página
+                         viewMatchLink.href = `match-detail.html?tournamentId=${tournamentId}&roundId=${round.id}&matchId=${match.id}`;
+
+                         // CORREÇÃO: Ocultar o link SOMENTE se o status NÃO for PENDING ou IN_PROGRESS
+                         // Ou seja, ocultar apenas se for FINISHED ou outro status que não permite visualização
+                         // Se o status for PENDING ou IN_PROGRESS, o link deve ser visível
+                         if (match.status === 'FINISHED') { // Oculta apenas se a partida terminou
+                             viewMatchLink.classList.add('hidden'); // Adiciona classe hidden para ocultar via CSS
+                         } else { // Se for PENDING, IN_PROGRESS ou outro status, mostra o link
+                             viewMatchLink.classList.remove('hidden'); // Remove a classe hidden
+                         }
+                    }
+
+
+                    matchesContainer.appendChild(matchClone); // Adiciona a partida ao contêiner de partidas da rodada
+                });
+            } else if (matchesContainer) {
+                 matchesContainer.innerHTML = '<div class="empty-state-small"><p>Nenhuma partida nesta rodada.</p></div>';
+            }
+
+
+            roundsContainer.appendChild(roundClone); // Adiciona a rodada ao contêiner principal de rodadas
+        });
+    }
+
+    // Controla a visibilidade e estado do botão "Iniciar Torneio"
+    function updateStartButtonState(tournamentStatus) {
+        console.log("updateStartButtonState chamado com status:", tournamentStatus); // Log de diagnóstico
+        if (startTournamentBtn) {
+            console.log("Elemento startTournamentBtn encontrado."); // Log de diagnóstico
+            // O botão só é visível e habilitado se o status for CREATED
+            if (tournamentStatus === 'CREATED') {
+                console.log("Status é CREATED. Mostrando botão Iniciar Torneio."); // Log de diagnóstico
+                startTournamentBtn.classList.remove('hidden'); // Remove a classe hidden (mostra o botão)
+                startTournamentBtn.disabled = false; // Habilita o botão
+            } else { // Se o status não for 'CREATED' (ou seja, IN_PROGRESS ou FINISHED)
+                console.log("Status não é CREATED. Ocultando botão Iniciar Torneio."); // Log de diagnóstico
+                startTournamentBtn.classList.add('hidden'); // Adiciona a classe hidden (oculta o botão)
+                startTournamentBtn.disabled = true; // Desabilita o botão
+            }
+             console.log("Estado final do botão Iniciar Torneio: hidden =", startTournamentBtn.classList.contains('hidden'), ", disabled =", startTournamentBtn.disabled); // Log de diagnóstico
+        } else {
+             console.error("Elemento #start-tournament-btn não encontrado!"); // Log de diagnóstico
+        }
+    }
+
+    // Lida com o clique no botão "Iniciar Torneio"
+    async function startTournament() {
+        if (!tournamentId) {
+            showNotification('ID do torneio não disponível.', 'error');
+            return;
+        }
+
+        // Opcional: Desabilitar o botão para evitar cliques múltiplos
+        if (startTournamentBtn) startTournamentBtn.disabled = true;
+
+
+        try {
+            console.log(`Iniciando torneio com ID: ${tournamentId}`);
+            // Chama a API para iniciar o torneio
+            const startedTournament = await TournamentAPI.start(tournamentId);
+            console.log("Torneio iniciado:", startedTournament);
+
+            showNotification('Torneio iniciado com sucesso!', 'success');
+
+            // Recarrega os dados da página após iniciar o torneio
+            // Pequeno delay para a notificação ser visível
+            setTimeout(() => {
+                 loadTournamentData(tournamentId);
+            }, 1000);
+
+
+        } catch (error) {
+            console.error('Erro ao iniciar torneio:', error);
+            const errorMessage = error.message || 'Ocorreu um erro ao iniciar o torneio.';
+            showNotification(`Erro ao iniciar torneio: ${errorMessage}`, 'error');
+
+        } finally {
+            // A função loadTournamentData já cuidará do estado do botão com base no novo status
+            // Se o erro ocorrer, o botão pode precisar ser reabilitado
+             if (startTournamentBtn && currentTournamentData && currentTournamentData.status === 'CREATED') {
+                 startTournamentBtn.disabled = false;
+             }
+        }
+    }
+
+
+    // Utilitário para mostrar/ocultar indicador de carregamento
+    function showLoading(isLoading) {
+        if (tournamentLoading && tournamentContent) {
+            if (isLoading) {
+                tournamentLoading.style.display = 'flex'; // Ou 'block', dependendo do seu CSS
+                tournamentContent.classList.add('hidden'); // Oculta o conteúdo
+            } else {
+                tournamentLoading.style.display = 'none';
+                // tournamentContent.classList.remove('hidden'); // Será mostrado após o carregamento bem-sucedido
+            }
+        }
+    }
+
+    // TODO: Adicionar a função getStatusText, getMatchStatusText, getRoundStatusText no utils.js se ainda não estiverem lá
+    // Elas convertem os enums de status do backend para texto amigável no frontend.
+    // Exemplo simples em utils.js:
+    /*
+    export function getStatusText(status) {
+      switch (status) {
+        case "CREATED": return "Criado";
+        case "IN_PROGRESS": return "Em Andamento";
+        case "FINISHED": return "Finalizado";
+        default: return status || 'Desconhecido';
       }
-    default:
-      return status
-  }
-}
+    }
+    // Adapte para status de Rodada e Partida se forem diferentes
+    */
+
+});

@@ -6,9 +6,8 @@
     <title>Novo Torneio - Chess Brawl</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="css/components.css">
-    <link rel="stylesheet" href="css/pages/tournament-form.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-</head>
+    <link rel="stylesheet" href="css/pages/tournament-form.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    </head>
 <body>
     <header class="main-header">
         <div class="container">
@@ -31,102 +30,53 @@
         <div class="page-header">
             <h2>Novo Torneio</h2>
             <a href="tournaments.html" class="btn btn-outline">
-                <i class="fas fa-arrow-left"></i> Voltar
+                <i class="fas fa-arrow-left"></i> Voltar para Torneios
             </a>
         </div>
 
-        <div id="active-tournament-warning" class="alert alert-warning" style="display: none;">
+        <div id="active-tournament-warning" class="alert alert-warning hidden">
             <i class="fas fa-exclamation-triangle"></i>
-            <div>
-                <h3>Já existe um torneio em andamento</h3>
-                <p>Finalize o torneio atual antes de criar um novo.</p>
-                <a href="#" id="view-active-tournament" class="btn btn-primary btn-sm">Ver Torneio Ativo</a>
-            </div>
+            Já existe um torneio em andamento. Você só pode criar um torneio por vez.
+            <a href="#" id="view-active-tournament" class="alert-link">Ver Torneio Ativo</a>
         </div>
 
-        <div id="tournament-form-container">
-            <form id="tournament-form" class="card">
-                <div class="form-section">
-                    <h3>Informações do Torneio</h3>
-                    <div class="form-group">
-                        <label for="tournament-name" class="form-label">Nome do Torneio</label>
-                        <input type="text" id="tournament-name" class="form-control" required>
-                        <div id="tournament-name-error" class="form-error"></div>
-                    </div>
+        <div id="new-tournament-form-section">
+            <form id="tournament-form">
+                <div class="form-group">
+                    <label for="tournament-name" class="form-label">Nome do Torneio</label>
+                    <input type="text" id="tournament-name" class="form-control" required>
+                    <div id="tournament-name-error" class="form-error"></div>
                 </div>
 
-                <div class="form-section">
-                    <h3>Seleção de Jogadores</h3>
-                    <p class="form-hint">Selecione entre 4 e 8 jogadores (número par) para o torneio.</p>
-                    
-                    <div class="player-search-container">
-                        <div class="form-group">
-                            <label for="player-search" class="form-label">Buscar Jogador</label>
-                            <div class="search-input">
-                                <input type="text" id="player-search" class="form-control" placeholder="Digite o nickname do jogador...">
-                                <button type="button" id="search-player-btn" class="btn btn-outline">
-                                    <i class="fas fa-search"></i>
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div id="player-search-results" class="search-results">
-                            <!-- Resultados da busca serão inseridos aqui -->
-                        </div>
+                <div class="form-group">
+                    <label class="form-label">Adicionar Jogadores (4 a 8, número par)</label>
+                    <div class="player-search-area">
+                        <input type="text" id="player-search-input" class="form-control" placeholder="Buscar jogador por nickname...">
+                        <button type="button" id="search-player-btn" class="btn btn-secondary">Buscar</button>
                     </div>
-                    
-                    <div class="selected-players-container">
-                        <h4>Jogadores Selecionados (<span id="selected-count">0</span>)</h4>
-                        <div id="selected-players" class="selected-players">
-                            <div class="empty-selection">
-                                <i class="fas fa-users"></i>
-                                <p>Nenhum jogador selecionado</p>
-                            </div>
+                    <div id="player-search-results" class="search-results-dropdown">
                         </div>
-                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Jogadores Selecionados (<span id="selected-count">0</span>/8)</label>
+                    <div id="selected-players-container" class="selected-players-list">
+                        </div>
+                     <div id="selected-players-error" class="form-error"></div>
                 </div>
 
                 <div class="form-actions">
                     <button type="submit" id="create-tournament-btn" class="btn btn-primary" disabled>
-                        <i class="fas fa-trophy"></i> Criar Torneio
+                        <i class="fas fa-plus"></i> Criar Torneio
                     </button>
-                    <a href="tournaments.html" class="btn btn-outline">Cancelar</a>
                 </div>
             </form>
         </div>
+
+         <div id="notification-area" class="mt-6">
+            </div>
+
     </main>
-
-    <!-- Template para resultado de busca de jogador -->
-    <template id="player-result-template">
-        <div class="player-result">
-            <div class="player-info">
-                <h4 class="player-nickname"></h4>
-                <p class="player-name"></p>
-            </div>
-            <div class="player-rating">
-                <span class="rating-value"></span>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline add-player">
-                <i class="fas fa-plus"></i>
-            </button>
-        </div>
-    </template>
-
-    <!-- Template para jogador selecionado -->
-    <template id="selected-player-template">
-        <div class="selected-player">
-            <div class="player-info">
-                <h4 class="player-nickname"></h4>
-                <p class="player-name"></p>
-            </div>
-            <div class="player-rating">
-                <span class="rating-value"></span>
-            </div>
-            <button type="button" class="btn btn-sm btn-outline remove-player">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    </template>
 
     <footer class="main-footer">
         <div class="container">
@@ -134,8 +84,39 @@
         </div>
     </footer>
 
-    <script src="js/utils.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/pages/new-tournament.js"></script>
+    <template id="player-result-template">
+        <div class="player-result-item">
+            <div class="player-info">
+                <h4 class="player-nickname"></h4>
+                <p class="player-name"></p>
+            </div>
+            <div class="player-rating">
+                <span class="rating-value"></span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline add-player-btn">
+                <i class="fas fa-plus"></i> Adicionar
+            </button>
+        </div>
+    </template>
+
+    <template id="selected-player-template">
+        <div class="selected-player-item">
+            <div class="player-info">
+                <h4 class="player-nickname"></h4>
+                <p class="player-name"></p>
+            </div>
+            <div class="player-rating">
+                <span class="rating-value"></span>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline remove-player-btn">
+                <i class="fas fa-times"></i> Remover
+            </button>
+        </div>
+    </template>
+
+
+    <script type="module" src="js/utils.js"></script>
+    <script type="module" src="js/api.js"></script>
+    <script type="module" src="js/pages/new-tournament.js"></script>
 </body>
 </html>

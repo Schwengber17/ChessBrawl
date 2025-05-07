@@ -1,6 +1,9 @@
     package gabrielOttonelli.ChessBrawl.DTO;
 
-    import jakarta.validation.constraints.*;
+    import java.util.ArrayList;
+import java.util.List;
+
+import jakarta.validation.constraints.*;
     import lombok.AllArgsConstructor;
     import lombok.Data;
     import lombok.NoArgsConstructor;
@@ -17,4 +20,5 @@
         private String status;
         private int playerCount;
         private int roundCount;
+        private List<Long> playerIds= new ArrayList<>();
     }

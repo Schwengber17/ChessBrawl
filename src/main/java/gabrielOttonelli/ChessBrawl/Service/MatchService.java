@@ -62,6 +62,7 @@ public class MatchService {
         }
         // Converte o enum para String, verificando se não é null
         if (match.getStatus() != null) {
+             // CORREÇÃO AQUI: Converter o enum MatchStatus para String
              dto.setStatus(match.getStatus());
         } else {
              dto.setStatus(null); // Ou um valor padrão como "UNKNOWN"
@@ -108,7 +109,8 @@ public class MatchService {
         }
         // Converte o enum EventType para String, verificando se não é null
         if (event.getEventType() != null) {
-            dto.setEventType(event.getEventType().name());
+            // CORREÇÃO AQUI: Converter o enum EventType para String
+            dto.setEventType(event.getEventType());
         } else {
              dto.setEventType(null); // Ou um valor padrão
         }
@@ -134,12 +136,10 @@ public class MatchService {
                 .orElseThrow(() -> new BusinessException("Jogador não encontrado para o evento com ID: " + eventDTO.getPlayerId()));
         event.setPlayer(player);
 
-        // Converte a String do DTO para o enum EventType
-        try {
-            event.setEventType(EventType.valueOf(eventDTO.getEventType()));
-        } catch (IllegalArgumentException e) {
-            throw new BusinessException("Tipo de evento inválido: " + eventDTO.getEventType());
-        }
+        // *** CORREÇÃO AQUI: Definir o EventType diretamente do DTO, sem try-catch desnecessário ***
+        // Assumimos que o EventDTO já tem o tipo correto (EventType enum)
+        event.setEventType(eventDTO.getEventType());
+
 
         return event;
     }
@@ -166,17 +166,6 @@ public class MatchService {
                      .collect(Collectors.toList());
     }
 
-    // Busca todas as partidas de uma rodada específica pelo ID da rodada e retorna como lista de DTOs.
-    public List<MatchDTO> getMatchesByRoundId(Long roundId) {
-        // Validação: Verificar se a rodada existe antes de buscar partidas
-        if (!roundRepository.existsById(roundId)) {
-            throw new BusinessException("Rodada não encontrada com ID: " + roundId);
-        }
-        List<Match> matches = matchRepository.findByRoundId(roundId); // Usa o método do MatchRepository
-        return matches.stream()
-                      .map(this::convertToDTO) // Converte cada entidade Match para MatchDTO
-                      .collect(Collectors.toList());
-    }
 
 
     // Inicia uma partida (muda o status para IN_PROGRESS).
@@ -226,10 +215,10 @@ public class MatchService {
         // Isso requer verificar os eventos JÁ registrados para esta partida, este jogador e este tipo de evento.
         // Assumindo um método existsByMatchIdAndPlayerIdAndEventType no EventRepository
          boolean eventAlreadyRegistered = eventRepository.existsByMatchIdAndPlayerIdAndEventType(
-             match.getId(), eventPlayer.getId(), eventDTO.getEventType())
-         ;
+             match.getId(), eventPlayer.getId(), eventDTO.getEventType() // *** CORREÇÃO AQUI: Passar o EventType diretamente ***
+         );
          if (eventAlreadyRegistered) {
-             throw new BusinessException("O evento '" + eventDTO.getEventType() + "' já foi registrado para este jogador nesta partida.");
+             throw new BusinessException("O evento '" + eventDTO.getEventType().name() + "' já foi registrado para este jogador nesta partida.");
          }
 
 
@@ -268,11 +257,7 @@ public class MatchService {
         if (match.getStatus() != MatchStatus.IN_PROGRESS) {
             throw new BusinessException("Não é possível finalizar uma partida que não está em andamento.");
         }
-
-        // 3. Calcular a pontuação final de cada jogador na partida com base nos eventos registrados.
-        // Buscar todos os eventos desta partida.
         List<Event> eventsInMatch = eventRepository.findByMatchId(match.getId());
-
         // Calcular pontos totais de evento para cada jogador nesta partida.
         int player1EventPoints = calculateEventPoints(match.getPlayer1(), eventsInMatch);
         int player2EventPoints = calculateEventPoints(match.getPlayer2(), eventsInMatch);
@@ -282,7 +267,6 @@ public class MatchService {
         int player2Score = player2EventPoints;
 
 
-        // 4. Determinar o vencedor com base na pontuação calculada.
         Player winner = null;
         Player loser = null;
         boolean isDraw = false;
@@ -296,31 +280,25 @@ public class MatchService {
         } else {
             // Empate! Acionar Blitz Match.
             isDraw = true;
-            // Implementar lógica de Blitz Match
-            // Uma forma simples: dar +2 pontos aleatoriamente para um jogador.
             Random random = new Random();
             if (random.nextBoolean()) { // 50% de chance para cada jogador
-                player1Score += 2; // Player 1 ganha 2 pontos no Blitz
-                match.setBlitzMatch(true); // Marcar como Blitz Match
+                player1Score += 2; 
+                match.setBlitzMatch(true); 
             } else {
-                player2Score += 2; // Player 2 ganha 2 pontos no Blitz
-                match.setBlitzMatch(true); // Marcar como Blitz Match
+                player2Score += 2; 
+                match.setBlitzMatch(true); 
             }
 
-            // Determinar o vencedor após o Blitz Match
             if (player1Score > player2Score) {
                 winner = match.getPlayer1();
                 loser = match.getPlayer2();
-            } else { // player2Score > player1Score (não pode haver empate após Blitz Match com +2)
+            } else {
                 winner = match.getPlayer2();
                 loser = match.getPlayer1();
             }
         }
 
-        // 5. Definir o vencedor na entidade Match.
         match.setWinner(winner);
-
-        // 6. Mudar o status da partida para FINISHED.
         match.setStatus(MatchStatus.FINISHED);
 
         // 7. Calcular e atualizar as estatísticas finais dos jogadores (TournamentPoints, Wins, Losses, Draws, GamesPlayed, MovesMade, etc.)
@@ -330,12 +308,12 @@ public class MatchService {
 
         // Atualizar estatísticas do Vencedor
         if (winner != null) {
-            playerService.updatePlayerStats(winner, 30, 1, 0, 0, 1, calculateTotalMoves(eventsInMatch, winner), calculateEventCount(eventsInMatch, winner, EventType.ORIGINAL_MOVE), calculateEventCount(eventsInMatch, winner, EventType.BLUNDER), calculateEventCount(eventsInMatch, winner, EventType.ADVANTAGEOUS_POSITION), calculateEventCount(eventsInMatch, winner, EventType.DISRESPECT), calculateEventCount(eventsInMatch, winner, EventType.RAGE_ATTACK));
+            playerService.updatePlayerStats(winner, 30, calculateEventCount(eventsInMatch, winner, EventType.ORIGINAL_MOVE), calculateEventCount(eventsInMatch, winner, EventType.BLUNDER), calculateEventCount(eventsInMatch, winner, EventType.ADVANTAGEOUS_POSITION), calculateEventCount(eventsInMatch, winner, EventType.DISRESPECT), calculateEventCount(eventsInMatch, winner, EventType.RAGE_ATTACK));
         }
 
         // Atualizar estatísticas do Perdedor
         if (loser != null) {
-             playerService.updatePlayerStats(loser, 0, 0, 1, 0, 1, calculateTotalMoves(eventsInMatch, loser), calculateEventCount(eventsInMatch, loser, EventType.ORIGINAL_MOVE), calculateEventCount(eventsInMatch, loser, EventType.BLUNDER), calculateEventCount(eventsInMatch, loser, EventType.ADVANTAGEOUS_POSITION), calculateEventCount(eventsInMatch, loser, EventType.DISRESPECT), calculateEventCount(eventsInMatch, loser, EventType.RAGE_ATTACK));
+             playerService.updatePlayerStats(loser, 0, calculateEventCount(eventsInMatch, loser, EventType.ORIGINAL_MOVE), calculateEventCount(eventsInMatch, loser, EventType.BLUNDER), calculateEventCount(eventsInMatch, loser, EventType.ADVANTAGEOUS_POSITION), calculateEventCount(eventsInMatch, loser, EventType.DISRESPECT), calculateEventCount(eventsInMatch, loser, EventType.RAGE_ATTACK));
         }
 
         // Se houve empate ANTES do Blitz Match, ambos os jogadores registram um empate.
@@ -387,15 +365,6 @@ public class MatchService {
         return points;
     }
 
-    // Método auxiliar para calcular o total de movimentos (exemplo simples: contar eventos ORIGINAL_MOVE)
-    private int calculateTotalMoves(List<Event> events, Player player) {
-        // TODO: Implementar lógica mais precisa para total de movimentos se necessário
-        // Por enquanto, um exemplo simples: contar eventos de movimento original para o jogador
-        return (int) events.stream()
-            .filter(event -> event.getPlayer().equals(player) && event.getEventType() == EventType.ORIGINAL_MOVE)
-            .count();
-    }
-
     // Método auxiliar para contar eventos de um tipo específico para um jogador
     private int calculateEventCount(List<Event> events, Player player, EventType eventType) {
          return (int) events.stream()
@@ -414,9 +383,16 @@ public class MatchService {
                      .toArray(String[]::new); // Coleta em um array de String
     }
 
+    // Método para buscar todas as partidas de uma rodada específica pelo ID da rodada e retorna como lista de DTOs.
+    // Chamado pelo MatchController.
+    public List<MatchDTO> getMatchesByRoundId(Long roundId) {
+        if (!roundRepository.existsById(roundId)) {
+            throw new BusinessException("Rodada não encontrada com ID: " + roundId);
+        }
+        List<Match> matches = matchRepository.findByRoundId(roundId);
+        return matches.stream()
+                      .map(this::convertToDTO)
+                      .collect(Collectors.toList());
+    }
 
-
-
-    // TODO: Adicionar outros métodos conforme a lógica de negócio da partida evolui.
-    // Ex: getMatchDetails (que pode incluir EventDTOs), updateMatchStatus, etc.
 }

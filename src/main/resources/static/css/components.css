@@ -201,6 +201,12 @@
     animation: slideOut 0.3s ease-in forwards;
 }
 
+/* Regra para ocultar elementos com a classe 'hidden' */
+.hidden {
+    display: none !important; /* Use !important para garantir que a regra não seja sobrescrita facilmente */
+}
+
+
 @keyframes slideIn {
     from {
         transform: translateX(100%);

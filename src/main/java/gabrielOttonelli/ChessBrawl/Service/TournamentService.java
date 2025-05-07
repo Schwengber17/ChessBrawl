@@ -61,17 +61,33 @@ public class TournamentService {
 
 
         // Populando campos de contagem para listagem
-        dto.setPlayerCount(tournament.getPlayers().size());
-        dto.setRoundCount(tournament.getRounds().size());
+        // Verifica se a lista de jogadores não é null antes de obter o tamanho
+        if (tournament.getPlayers() != null) {
+            dto.setPlayerCount(tournament.getPlayers().size());
+        } else {
+            dto.setPlayerCount(0);
+        }
+        // Verifica se a lista de rodadas não é null antes de obter o tamanho
+        if (tournament.getRounds() != null) {
+            dto.setRoundCount(tournament.getRounds().size());
+        } else {
+            dto.setRoundCount(0);
+        }
+
 
         // Se este DTO for usado para detalhes, você pode popular listas de DTOs aninhados aqui:
         // Exemplo: Populando lista de RoundDTOs (buscando as rodadas e convertendo)
         // TODO: Descomentar e usar o método getRoundsByTournamentId do RoundService
-        // dto.setRounds(roundService.getRoundsByTournamentId(tournament.getId()));
+        // if (tournament.getId() != null) { // Só busca rodadas se o torneio tiver ID
+        //     dto.setRounds(roundService.getRoundsByTournamentId(tournament.getId()));
+        // }
+
 
         // Exemplo: Populando lista de PlayerDTOs (buscando os jogadores e convertendo)
         // TODO: Implementar um método getPlayersByTournamentId no PlayerService e usá-lo aqui
-        // dto.setPlayers(playerService.getPlayersByTournamentId(tournament.getId()));
+        // if (tournament.getId() != null) { // Só busca jogadores se o torneio tiver ID
+        //     dto.setPlayers(playerService.getPlayersByTournamentId(tournament.getId()));
+        // }
 
 
         return dto;
@@ -82,7 +98,7 @@ public class TournamentService {
     private Tournament convertToEntity(TournamentDTO tournamentDTO) {
         Tournament tournament = new Tournament();
         // O ID só é definido se o DTO tiver um ID (indicando uma atualização, menos comum para torneios)
-        tournament.setId(tournamentDTO.getId());
+        // tournament.setId(tournamentDTO.getId()); // Não defina ID na criação
         tournament.setName(tournamentDTO.getName());
         // O status inicial é sempre CREATED por padrão na entidade.
         // tournament.setStatus(Tournament.TournamentStatus.valueOf(tournamentDTO.getStatus())); // Usar apenas na atualização se status puder ser alterado via DTO
@@ -99,43 +115,85 @@ public class TournamentService {
     // Busca todos os torneios e retorna como lista de DTOs (para listagem)
     public List<TournamentDTO> getAllTournaments() {
         return tournamentRepository.findAll().stream()
-                .map(this::convertToDTO) // Converte cada entidade para DTO (com contagens)
-                .collect(Collectors.toList());
+                 .map(this::convertToDTO) // Converte cada entidade para DTO (com contagens)
+                 .collect(Collectors.toList());
     }
 
     // Busca torneios por status e retorna como lista de DTOs
     public List<TournamentDTO> getTournamentsByStatus(Tournament.TournamentStatus status) {
         return tournamentRepository.findByStatus(status).stream()
-                .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                 .map(this::convertToDTO)
+                 .collect(Collectors.toList());
     }
 
 
     // Busca um torneio por ID e retorna como DTO (pode incluir mais detalhes, como rodadas/jogadores)
     public TournamentDTO getTournamentById(Long id) {
+        // 1. Buscar a entidade Tournament
         Tournament tournament = tournamentRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Torneio não encontrado com ID: " + id));
+                 .orElseThrow(() -> new BusinessException("Torneio não encontrado com ID: " + id));
 
-        // TODO: Aqui você pode criar um DTO mais detalhado se necessário,
-        // populando as listas de RoundDTOs e PlayerDTOs.
-        // Por enquanto, usamos o mesmo convertToDTO que popula contagens.
-        return convertToDTO(tournament);
+        // 2. Criar o DTO (usando o método auxiliar que já popula contagens)
+        TournamentDTO dto = convertToDTO(tournament);
+
+        // TODO: Se este DTO for usado para detalhes e precisar de listas aninhadas (players, rounds), popule-as aqui:
+        // Exemplo: Populando lista de RoundDTOs (buscando as rodadas e convertendo)
+        // dto.setRounds(roundService.getRoundsByTournamentId(tournament.getId()));
+
+        // Exemplo: Populando lista de PlayerDTOs (buscando os jogadores e convertendo)
+        // dto.setPlayers(playerService.getPlayersByTournamentId(tournament.getId()));
+
+
+        return dto;
     }
 
     // Cria um novo torneio.
-    @Transactional
+    @Transactional // Garante que a criação do torneio e a atualização dos jogadores sejam atômicas
     public TournamentDTO createTournament(TournamentDTO tournamentDTO) {
-        // Validação de negócio: verificar se já existe um torneio com o mesmo nome (opcional)
-        // if (tournamentRepository.existsByName(tournamentDTO.getName())) {
-        //     throw new BusinessException("Já existe um torneio com o nome '" + tournamentDTO.getName() + "'.");
-        // }
+        // 1. Validar o número de jogadores (frontend já valida, mas backend deve garantir)
+        if (tournamentDTO.getPlayerIds() == null || tournamentDTO.getPlayerIds().size() < 4 || tournamentDTO.getPlayerIds().size() > 8 || tournamentDTO.getPlayerIds().size() % 2 != 0) {
+             throw new BusinessException("Um torneio deve ter entre 4 e 8 jogadores (número par).");
+        }
 
-        Tournament tournament = new Tournament();
-        tournament.setName(tournamentDTO.getName());
-        // O status inicial é sempre CREATED por padrão na entidade.
+        // 2. Criar a nova entidade Tournament
+        Tournament newTournament = new Tournament();
+        newTournament.setName(tournamentDTO.getName());
+        // O status é definido como CREATED por padrão na entidade.
 
-        Tournament savedTournament = tournamentRepository.save(tournament);
+        // Lista para armazenar os jogadores que serão associados a este torneio
+        List<Player> associatedPlayers = new ArrayList<>();
 
+        // 3. Processar os jogadores selecionados
+        for (Long playerId : tournamentDTO.getPlayerIds()) {
+            // Buscar a entidade Player pelo ID
+            Player player = playerRepository.findById(playerId)
+                    .orElseThrow(() -> new BusinessException("Jogador não encontrado com ID: " + playerId));
+
+            // *** VALIDAÇÃO CRUCIAL: Verificar se o jogador já está em outro torneio ativo ***
+            if (player.getCurrentTournament() != null) {
+                throw new BusinessException("O jogador '" + player.getNickname() + "' já está participando do torneio '" + player.getCurrentTournament().getName() + "'. Um jogador só pode participar de um torneio por vez.");
+            }
+
+            player.setTournamentPoints(70);
+            playerRepository.save(player);// Resetar os pontos de torneio do jogador (se necessário)
+            associatedPlayers.add(player);
+
+
+            // *** CORREÇÃO AQUI: Definir o torneio atual para o jogador ***
+            // Usando o PlayerService para centralizar a lógica de atualização do jogador
+            playerService.setCurrentTournamentForPlayer(player, newTournament); // Associa o jogador ao novo torneio
+            // O PlayerService.setCurrentTournamentForPlayer já deve salvar o jogador.
+        }
+
+        // 4. Associar os jogadores ao torneio (relação ManyToMany)
+        // Isso pode ser feito definindo a lista de jogadores na entidade Tournament
+        newTournament.setPlayers(associatedPlayers);
+
+        // 5. Salvar a nova entidade Tournament
+        Tournament savedTournament = tournamentRepository.save(newTournament);
+
+        // 6. Converter a entidade salva de volta para DTO para retorno
+        // Usando o método auxiliar que já popula contagens
         return convertToDTO(savedTournament);
     }
 
@@ -144,11 +202,11 @@ public class TournamentService {
     public TournamentDTO addPlayerToTournament(Long tournamentId, Long playerId) {
         // 1. Buscar o torneio. Lança exceção se não encontrar.
         Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new BusinessException("Torneio não encontrado com ID: " + tournamentId));
+                 .orElseThrow(() -> new BusinessException("Torneio não encontrado com ID: " + tournamentId));
 
         // 2. Buscar o jogador. Lança exceção se não encontrar.
         Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new BusinessException("Jogador não encontrado com ID: " + playerId));
+                 .orElseThrow(() -> new BusinessException("Jogador não encontrado com ID: " + playerId));
 
         // 3. Validações de negócio para adicionar jogador:
         //    - Torneio deve estar no status CREATED.
@@ -184,13 +242,13 @@ public class TournamentService {
     // Remove um jogador de um torneio (status CREATED).
     @Transactional
     public TournamentDTO removePlayerFromTournament(Long tournamentId, Long playerId) {
-         // 1. Buscar o torneio. Lança exceção se não encontrar.
+        // 1. Buscar o torneio. Lança exceção se não encontrar.
         Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new BusinessException("Torneio não encontrado com ID: " + tournamentId));
+                 .orElseThrow(() -> new BusinessException("Torneio não encontrado com ID: " + tournamentId));
 
         // 2. Buscar o jogador. Lança exceção se não encontrar.
         Player player = playerRepository.findById(playerId)
-                .orElseThrow(() -> new BusinessException("Jogador não encontrado com ID: " + playerId));
+                 .orElseThrow(() -> new BusinessException("Jogador não encontrado com ID: " + playerId));
 
         // 3. Validações de negócio para remover jogador:
         //    - Torneio deve estar no status CREATED.
@@ -206,6 +264,7 @@ public class TournamentService {
         tournament.getPlayers().remove(player);
 
         // 5. Remover o torneio atual do jogador (se for este torneio)
+        // Usando o PlayerService para centralizar a lógica de atualização do jogador
         if (player.getCurrentTournament() != null && player.getCurrentTournament().getId().equals(tournamentId)) {
              playerService.setCurrentTournamentForPlayer(player, null);
         }
@@ -222,7 +281,7 @@ public class TournamentService {
     public TournamentDTO startTournament(Long tournamentId) {
         // 1. Buscar o torneio.
         Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new BusinessException("Torneio não encontrado com ID: " + tournamentId));
+                 .orElseThrow(() -> new BusinessException("Torneio não encontrado com ID: " + tournamentId));
 
         // 2. Validações de negócio para iniciar torneio:
         //    - Torneio deve estar no status CREATED.
@@ -234,16 +293,16 @@ public class TournamentService {
         if (playerCount < 4 || playerCount > 8 || playerCount % 2 != 0) {
              throw new BusinessException("O torneio deve ter entre 4 e 8 jogadores (inclusive) e um número par de jogadores para iniciar. Jogadores atuais: " + playerCount);
         }
+        // Resetar os pontos de torneio de todos os jogadores antes de iniciar o torneio
+        for (Player player : tournament.getPlayers()) {
+            player.setTournamentPoints(70);
+            playerRepository.save(player); // Salvar o jogador para persistir a alteração
+        }
+        //    - Jogadores não podem estar em outro torneio ativo (usando currentTournament).
 
-        // 3. Mudar o status do torneio para IN_PROGRESS.
         tournament.setStatus(Tournament.TournamentStatus.IN_PROGRESS);
-
-        // 4. Criar a primeira rodada e suas partidas (Orquestrando com RoundService).
-        // Passamos a lista de jogadores que participarão desta rodada (todos na primeira rodada).
-        // Usando a injeção @Lazy de RoundService
         roundService.createRound(tournament, 1, new ArrayList<>(tournament.getPlayers())); // Passa uma nova lista para evitar problemas de modificação
 
-        // 5. Salvar o torneio atualizado.
         Tournament startedTournament = tournamentRepository.save(tournament);
 
         return convertToDTO(startedTournament);
@@ -261,14 +320,14 @@ public class TournamentService {
         // 1. Buscar a rodada que terminou.
         // Usando RoundRepository diretamente ou RoundService.findRoundEntityById (se RoundService.findRoundEntityById não causar ciclo)
         Round completedRound = roundRepository.findById(finishedRoundId) // Usando RoundRepository diretamente
-                .orElseThrow(() -> new BusinessException("Rodada finalizada não encontrada com ID: " + finishedRoundId));
+                 .orElseThrow(() -> new BusinessException("Rodada finalizada não encontrada com ID: " + finishedRoundId));
 
         // 2. Buscar o torneio associado.
         Tournament tournament = completedRound.getTournament();
          if (tournament == null) {
              System.err.println("Rodada finalizada ID " + finishedRoundId + " não está associada a nenhum torneio.");
              return; // Não podemos continuar se a rodada não tem torneio
-        }
+         }
 
 
         // 3. Determinar os jogadores qualificados para a próxima etapa.
@@ -308,9 +367,9 @@ public class TournamentService {
         // Buscamos os jogadores que estavam neste torneio como currentTournament.
         List<Player> playersInThisTournament = playerRepository.findByCurrentTournament(tournament);
         for (Player player : playersInThisTournament) {
-            playerService.setCurrentTournamentForPlayer(player, null);
-            // TODO: Adicionar este torneio à lista tournamentsPlayed do jogador (se não estiver lá)
-            playerService.addTournamentToPlayedList(player, tournament);
+             playerService.setCurrentTournamentForPlayer(player, null);
+             // TODO: Adicionar este torneio à lista tournamentsPlayed do jogador (se não estiver lá)
+             // playerService.addTournamentToPlayedList(player, tournament); // Implementar este método no PlayerService
         }
 
         // 4. Salvar o torneio finalizado.
@@ -325,7 +384,7 @@ public class TournamentService {
     public void deleteTournament(Long tournamentId) {
         // 1. Buscar o torneio para garantir que ele existe.
         Tournament tournament = tournamentRepository.findById(tournamentId)
-                .orElseThrow(() -> new BusinessException("Torneio não encontrado com ID: " + tournamentId));
+                 .orElseThrow(() -> new BusinessException("Torneio não encontrado com ID: " + tournamentId));
 
         // 2. TODO: Validação de negócio: Verificar se o torneio não está em andamento.
         // if (tournament.getStatus() == Tournament.TournamentStatus.IN_PROGRESS) {
@@ -336,8 +395,13 @@ public class TournamentService {
         // Buscamos os jogadores que participaram deste torneio e removemos a referência.
         List<Player> playersWhoPlayedThisTournament = playerRepository.findByTournamentsPlayedContaining(tournament);
          for (Player player : playersWhoPlayedThisTournament) {
-             playerService.removeTournamentFromPlayedList(player, tournament);
+             // TODO: Implementar removeTournamentFromPlayedList no PlayerService
+             // playerService.removeTournamentFromPlayedList(player, tournament);
+             // Alternativa: Remover diretamente da lista e salvar o jogador
+             player.getTournamentsPlayed().remove(tournament);
+             playerRepository.save(player); // Salvar o jogador para persistir a remoção da associação
          }
+
 
         // 4. Remover o torneio atual dos jogadores se for este torneio.
         List<Player> playersCurrentlyInThisTournament = playerRepository.findByCurrentTournament(tournament);
@@ -358,6 +422,23 @@ public class TournamentService {
         tournamentRepository.delete(tournament);
     }
 
+    // Implementação do método para obter o ranking do torneio
+    public List<PlayerDTO> getTournamentRanking(Long tournamentId) {
+        // Buscar o torneio
+        Tournament tournament = tournamentRepository.findById(tournamentId)
+                 .orElseThrow(() -> new BusinessException("Torneio não encontrado para obter ranking com ID: " + tournamentId));
+
+        // Assumindo que a entidade Tournament tem getPlayers() que retorna a lista de jogadores associados
+        if (tournament.getPlayers() == null) {
+            return new ArrayList<>(); // Retorna lista vazia se não houver jogadores
+        }
+
+        // Converte as entidades Player associadas para PlayerDTOs, ordena por tournamentPoints e coleta em uma lista
+        return tournament.getPlayers().stream()
+                 .map(playerService::convertToDTO) // Usa PlayerService para converter Player para PlayerDTO
+                 .sorted((p1, p2) -> Integer.compare(p2.getTournamentPoints(), p1.getTournamentPoints())) // Ordena por pontos (desc)
+                 .collect(Collectors.toList());
+    }
     // TODO: Adicionar outros métodos conforme a lógica de negócio do torneio evolui.
     // Ex: updateTournament, getTournamentStandings, etc.
 }

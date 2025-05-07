@@ -35,7 +35,7 @@ public class EventService {
         dto.setMatchId(event.getMatch().getId());
         dto.setPlayerId(event.getPlayer().getId());
         // Converte o enum EventType para String
-        dto.setEventType(event.getEventType().name());
+        dto.setEventType(event.getEventType());
         return dto;
     }
 
@@ -60,7 +60,7 @@ public class EventService {
 
         // Converte a String do DTO para o enum EventType
         try {
-            event.setEventType(EventType.valueOf(eventDTO.getEventType()));
+            event.setEventType(eventDTO.getEventType());
         } catch (IllegalArgumentException e) {
             throw new BusinessException("Tipo de evento inválido: " + eventDTO.getEventType());
         }

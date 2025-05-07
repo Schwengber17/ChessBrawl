@@ -126,11 +126,12 @@ public class TournamentController {
 
     // TODO: Endpoint para obter o ranking do torneio
     // Mapeado para GET /api/tournaments/{id}/ranking
-    // @GetMapping("/{id}/ranking")
-    // public ResponseEntity<List<PlayerDTO>> getTournamentRanking(@PathVariable Long id) {
-    //     // TODO: Implementar método getTournamentRanking no TournamentService
-    //     // List<PlayerDTO> ranking = tournamentService.getTournamentRanking(id);
-    //     // return ResponseEntity.ok(ranking);
-    //      return ResponseEntity.ok().build(); // Placeholder
-    // }
+    @GetMapping("/{id}/ranking") // *** NOVO ENDPOINT ***
+    public ResponseEntity<List<PlayerDTO>> getTournamentRanking(@PathVariable Long id) {
+        // Chama o método do Service para obter o ranking
+        // Você precisará implementar getTournamentRanking(id) no seu TournamentService
+        List<PlayerDTO> ranking = tournamentService.getTournamentRanking(id);
+        // Retorna a lista de DTOs de jogadores (ranking) com status HTTP 200 OK
+        return ResponseEntity.ok(ranking);
+    }
 }
