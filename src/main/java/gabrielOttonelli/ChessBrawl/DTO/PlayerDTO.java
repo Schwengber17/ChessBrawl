@@ -18,8 +18,8 @@ public class PlayerDTO {
     @NotBlank(message = "Nickname é obrigatório")
     private String nickname;
     
-    @Min(value = 1, message = "Pontuação mínima no ranking é 1")
-    @Max(value = 15000, message = "Pontuação máxima no ranking é 15000")
+    @Min(value = 1, message = "Pontuação mínima no é 1")
+    @Max(value = 15000, message = "Pontuação máxima no é 15000")
     private int rating;
     private Long currentTournamentId;
     private String currentTournamentName;

@@ -177,8 +177,8 @@ public class MatchService {
     }
 
 
-    @Transactional // Garante que todas as operações (atualizar partida, jogadores, notificar rodada) sejam atômicas
-    public MatchDTO finishMatch(Long matchId) { // Removido winnerId do parâmetro, a lógica deve determinar o vencedor
+    @Transactional 
+    public MatchDTO finishMatch(Long matchId) { 
         Match match = matchRepository.findById(matchId)
                 .orElseThrow(() -> new BusinessException("Partida não encontrada para finalizar com ID: " + matchId));
 
@@ -204,7 +204,6 @@ public class MatchService {
             winner = match.getPlayer2();
             loser = match.getPlayer1();
         } else {
-            // Empate! Acionar Blitz Match.
             isDraw = true;
             Random random = new Random();
             if (random.nextBoolean()) { // 50% de chance para cada jogador

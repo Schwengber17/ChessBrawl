@@ -13,7 +13,7 @@ public class MatchGlobalController {
 
     private final MatchService matchService; 
 
-    // Fiz este endpoint não aninhado com /tournaments/{tournamentId}/rounds/{roundId}/matches
+    // Fiz este endpoint não aninhado com /tournaments/{tournamentId}/rounds/{roundId}/matches para tratamento de um erro
     @GetMapping("/event-types")
     @CrossOrigin(origins = "http://localhost:8080") 
     public ResponseEntity<String[]> getEventTypes() {
